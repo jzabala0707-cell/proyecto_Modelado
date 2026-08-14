@@ -21,3 +21,10 @@ Thumbs.db
 *.log
 coverage
 *.tsbuildinfo
+feat(admin): 11 modulos con CRUD, filtros, sort, paginacion, export CSV, convertido TS->JS
+
+- Usuarios, Roles, Guias, Tours, Grupos, TiposTour, Reservas, Clientes, Ventas, Pagos, Reportes, Configuracion
+- Arquitectura hook-first: useCrudState + useSearchFilter + useDialogs + useSortableTable + usePagination
+- Tablas sortables con Eye (detalle), Pencil (editar), Power (toggle status), Trash2 (eliminar)
+- SearchToolbar, StatsGrid, Filters avanzados, Export CSV, TablePagination en todos los modulos
+- Proyecto convertido TypeScript -> JavaScript completo (2450 modules)
