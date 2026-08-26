@@ -39,15 +39,15 @@ export function useToursPage() {
     const pagination = usePagination(sortable.sortedItems, 10);
     const hasActiveFilters = filters.status !== "all" || filters.type !== "all" || filters.language !== "all" || search.searchTerm !== "";
 
-    const handleCreate = useCallback(() => {
-        crud.handleCreate(formData);
+    const handleCreate = useCallback((validData) => {
+        crud.handleCreate(validData ?? formData);
         dialogs.closeCreate();
         setFormData(emptyTourForm);
     }, [crud, formData, dialogs]);
 
-    const handleEdit = useCallback(() => {
+    const handleEdit = useCallback((validData) => {
         if (!dialogs.selectedItem) return;
-        crud.handleEdit(dialogs.selectedItem.id, formData);
+        crud.handleEdit(dialogs.selectedItem.id, validData ?? formData);
         dialogs.closeEdit();
     }, [crud, dialogs, formData]);
 
@@ -141,15 +141,15 @@ export function useGroupsPage() {
     const pagination = usePagination(sortable.sortedItems, 10);
     const hasActiveFilters = filters.status !== "all" || filters.guide !== "all" || search.searchTerm !== "";
 
-    const handleCreate = useCallback(() => {
-        crud.handleCreate(formData);
+    const handleCreate = useCallback((validData) => {
+        crud.handleCreate(validData ?? formData);
         dialogs.closeCreate();
         setFormData(emptyGroupForm);
     }, [crud, formData, dialogs]);
 
-    const handleEdit = useCallback(() => {
+    const handleEdit = useCallback((validData) => {
         if (!dialogs.selectedItem) return;
-        crud.handleEdit(dialogs.selectedItem.id, formData);
+        crud.handleEdit(dialogs.selectedItem.id, validData ?? formData);
         dialogs.closeEdit();
     }, [crud, dialogs, formData]);
 

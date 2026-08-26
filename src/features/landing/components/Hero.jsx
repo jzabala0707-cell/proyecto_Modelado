@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, ArrowRight, Search, Clock, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 const CAROUSEL_SLIDES = [
     {
         img: "https://images.unsplash.com/photo-1671240434571-a21d691f713b?w=1600&h=900&fit=crop&auto=format",
@@ -19,8 +19,8 @@ const CAROUSEL_SLIDES = [
         badge: "🌿 Naturaleza",
     },
 ];
-export function Hero({ slide, setSlide, prev, next, searchType, setSearchType, searchDate, setSearchDate, searchPeople, setSearchPeople, }) {
-    return (<section className="relative overflow-hidden" style={{ height: "92vh", minHeight: "560px" }}>
+export function Hero({ slide, setSlide, prev, next }) {
+    return (<section className="relative" style={{ height: "70vh", minHeight: "480px" }}>
       {CAROUSEL_SLIDES.map((s, i) => (<div key={i} className="absolute inset-0 transition-opacity duration-1000" style={{ opacity: i === slide ? 1 : 0 }}>
           <img src={s.img} alt={s.badge} className="w-full h-full object-cover"/>
           <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.3) 60%, rgba(0,0,0,0.1) 100%)" }}/>
@@ -48,38 +48,8 @@ export function Hero({ slide, setSlide, prev, next, searchType, setSearchType, s
         <ChevronRight className="w-5 h-5"/>
       </button>
 
-      <div className="absolute bottom-28 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex gap-2">
         {CAROUSEL_SLIDES.map((_, i) => (<button key={i} onClick={() => setSlide(i)} className="rounded-full transition-all duration-300" style={{ width: i === slide ? "28px" : "8px", height: "8px", background: i === slide ? "#FF7A00" : "rgba(255,255,255,0.5)" }}/>))}
-      </div>
-
-      {/* Search Bar floating at bottom */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20 translate-y-1/2 w-full max-w-4xl px-4">
-        <div className="bg-white rounded-2xl shadow-2xl p-4 flex flex-col sm:flex-row gap-3 border border-gray-100">
-          <div className="flex-1 flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-xl">
-            <Search className="w-4 h-4 text-gray-400 shrink-0"/>
-            <select className="flex-1 bg-transparent text-sm text-gray-700 outline-none" value={searchType} onChange={(e) => setSearchType(e.target.value)}>
-              <option value="">Tipo de tour</option>
-              <option>Cultura</option>
-              <option>Aventura</option>
-              <option>Gastronomía</option>
-              <option>Naturaleza</option>
-            </select>
-          </div>
-          <div className="flex-1 flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-xl">
-            <Clock className="w-4 h-4 text-gray-400 shrink-0"/>
-            <input type="date" className="flex-1 bg-transparent text-sm text-gray-700 outline-none" value={searchDate} onChange={(e) => setSearchDate(e.target.value)}/>
-          </div>
-          <div className="flex-1 flex items-center gap-3 px-3 py-2 bg-gray-50 rounded-xl">
-            <Users className="w-4 h-4 text-gray-400 shrink-0"/>
-            <select className="flex-1 bg-transparent text-sm text-gray-700 outline-none" value={searchPeople} onChange={(e) => setSearchPeople(e.target.value)}>
-              <option value="">Personas</option>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => <option key={n}>{n} persona{n > 1 ? "s" : ""}</option>)}
-            </select>
-          </div>
-          <button className="px-6 py-3 text-white font-semibold rounded-xl transition-opacity duration-200 hover:opacity-90 shadow-md" style={{ background: "#FF7A00" }}>
-            Buscar
-          </button>
-        </div>
       </div>
     </section>);
 }

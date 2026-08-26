@@ -1,41 +1,169 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
-import { Label } from "@/shared/components/ui/label";
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/shared/components/ui/form";
 import { Input } from "@/shared/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/shared/components/ui/select";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, } from "recharts";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Download, Filter } from "lucide-react";
 import { StatsGrid } from "@/features/admin/components/StatCard";
-import { MONTHLY_DATA, TOURS_PERFORMANCE, GUIDES_PERFORMANCE, REPORT_TYPES, } from "../reportServices";
-export function ReportsFilters({ reportType, onReportTypeChange, dateStart, onDateStartChange, dateEnd, onDateEndChange, onGenerate, onExport, }) {
-    return (<Card>
-      <CardContent className="pt-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-          <div className="space-y-2">
-            <Label>Tipo de reporte</Label>
-            <Select value={reportType} onValueChange={onReportTypeChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar"/>
-              </SelectTrigger>
-              <SelectContent>
-                {REPORT_TYPES.map((r) => (<SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Desde</Label>
-            <Input type="date" value={dateStart} onChange={(e) => onDateStartChange(e.target.value)}/>
-          </div>
-          <div className="space-y-2">
-            <Label>Hasta</Label>
-            <Input type="date" value={dateEnd} onChange={(e) => onDateEndChange(e.target.value)}/>
-          </div>
-          <Button onClick={onGenerate}><Filter className="h-4 w-4 mr-2"/>Generar</Button>
-          <Button variant="outline" onClick={onExport}><Download className="h-4 w-4 mr-2"/>Exportar</Button>
-        </div>
-      </CardContent>
-    </Card>);
+import { MONTHLY_DATA, TOURS_PERFORMANCE, GUIDES_PERFORMANCE, REPORT_TYPES } from "../reportServices";
+import { reportFiltersSchema } from "@/features/admin/configuracion/validations/settingsValidation";
+
+export function ReportsFilters({
+    reportType,
+    onReportTypeChange,
+    dateStart,
+    onDateStartChange,
+    dateEnd,
+    onDateEndChange,
+    onGenerate,
+    onExport,
+}) {
+    const form = useForm({
+        resolver: zodResolver(reportFiltersSchema),
+        defaultValues: {
+            reportType: reportType,
+            startDate: dateStart,
+            endDate: dateEnd,
+        },
+        mode: "onTouched",
+    });
+
+    useEffect(() => {
+        form.reset({
+            reportType: reportType ?? "",
+            startDate: dateStart ?? "",
+            endDate: dateEnd ?? "",
+        });
+    }, [reportType, dateStart, dateEnd, form]);
+
+    const handleReportTypeChange = (value) => {
+        form.setValue("reportType", value, { shouldValidate: true });
+        onReportTypeChange(value);
+    };
+
+    const handleStartDateChange = (e) => {
+        const value = e.target.value;
+        form.setValue("startDate", value, { shouldValidate: true });
+        onDateStartChange(value);
+    };
+
+    const handleEndDateChange = (e) => {
+        const value = e.target.value;
+        form.setValue("endDate", value, { shouldValidate: true });
+        onDateEndChange(value);
+    };
+
+    const handleInternalGenerate = (validatedData) => {
+        onDateStartChange(validatedData.startDate);
+        onDateEndChange(validatedData.endDate);
+        onReportTypeChange(validatedData.reportType);
+        onGenerate();
+    };
+
+    return (
+        <Card>
+            <CardContent className="pt-6">
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleInternalGenerate)}>
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+                            <FormField
+                                control={form.control}
+                                name="reportType"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Tipo de reporte</FormLabel>
+                                        <Select
+                                            onValueChange={(v) => {
+                                                field.onChange(v);
+                                                handleReportTypeChange(v);
+                                            }}
+                                            defaultValue={field.value}
+                                            value={field.value}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccionar" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {REPORT_TYPES.map((r) => (
+                                                    <SelectItem key={r.value} value={r.value}>
+                                                        {r.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="startDate"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Desde</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="date"
+                                                {...field}
+                                                onChange={(e) => {
+                                                    field.onChange(e.target.value);
+                                                    handleStartDateChange(e);
+                                                }}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="endDate"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Hasta</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="date"
+                                                {...field}
+                                                onChange={(e) => {
+                                                    field.onChange(e.target.value);
+                                                    handleEndDateChange(e);
+                                                }}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <Button type="submit">
+                                <Filter className="h-4 w-4 mr-2" />
+                                Generar
+                            </Button>
+                            <Button variant="outline" type="button" onClick={onExport}>
+                                <Download className="h-4 w-4 mr-2" />
+                                Exportar
+                            </Button>
+                        </div>
+                    </form>
+                </Form>
+            </CardContent>
+        </Card>
+    );
 }
+
 export function MonthlyChart({}) {
     return (<Card className="lg:col-span-2">
       <CardHeader>

@@ -1,6 +1,7 @@
 import { useLanding } from "../hooks/useLanding";
 import { Navbar } from "../components/Navbar";
 import { Hero } from "../components/Hero";
+import { SearchBar } from "../components/SearchBar";
 import { Categories } from "../components/Categories";
 import { FeaturedTours } from "../components/FeaturedTours";
 import { Stats } from "../components/Stats";
@@ -11,10 +12,19 @@ export function LandingPage() {
     const { slide, setSlide, mobileOpen, setMobileOpen, searchType, setSearchType, searchDate, setSearchDate, searchPeople, setSearchPeople, liked, setLiked, email, setEmail, subscribed, setSubscribed, prev, next, } = useLanding();
     return (<div className="min-h-screen bg-white overflow-x-hidden">
       <Navbar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen}/>
-      
-      <Hero slide={slide} setSlide={setSlide} prev={prev} next={next} searchType={searchType} setSearchType={setSearchType} searchDate={searchDate} setSearchDate={setSearchDate} searchPeople={searchPeople} setSearchPeople={setSearchPeople}/>
 
-      <div className="h-20"/>
+      <Hero slide={slide} setSlide={setSlide} prev={prev} next={next}/>
+
+      <div className="py-10">
+        <SearchBar
+          searchType={searchType}
+          setSearchType={setSearchType}
+          searchDate={searchDate}
+          setSearchDate={setSearchDate}
+          searchPeople={searchPeople}
+          setSearchPeople={setSearchPeople}
+        />
+      </div>
 
       <Categories />
 

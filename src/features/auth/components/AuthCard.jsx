@@ -12,8 +12,8 @@ export function AuthCard({ title, description, icon, children, footer, maxWidth 
             <CardDescription className="text-base mt-2">{description}</CardDescription>
           </div>
         </CardHeader>
-        {children && <CardContent className="space-y-4">{children}</CardContent>}
-        {footer && <CardFooter className="flex flex-col space-y-4">{footer}</CardFooter>}
+        {children && <CardContent className="space-y-4 px-8 pb-4">{children}</CardContent>}
+        {footer && <CardFooter className="flex flex-col space-y-4 px-8 pb-8">{footer}</CardFooter>}
       </Card>
     </div>);
 }
@@ -30,8 +30,8 @@ export function AuthCardForm({ onSubmit, content, footer, ...cardProps }) {
           </div>
         </CardHeader>
         <form onSubmit={onSubmit}>
-          <CardContent className="space-y-4">{content}</CardContent>
-          <CardFooter className="flex flex-col space-y-4">{footer}</CardFooter>
+          <CardContent className="space-y-4 px-8 pb-4">{content}</CardContent>
+          <CardFooter className="flex flex-col space-y-4 px-8 pb-8">{footer}</CardFooter>
         </form>
       </Card>
     </div>);

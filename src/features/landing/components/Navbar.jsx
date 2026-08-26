@@ -26,10 +26,17 @@ export function Navbar({ mobileOpen, setMobileOpen }) {
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
-            <a href="/login" className="px-4 py-2 text-sm font-medium border-2 rounded-full transition-all duration-200 hover:bg-[#FF7A00] hover:text-white" style={{ borderColor: "#FF7A00", color: "#FF7A00" }}>
+            <a
+              href="/login"
+              className="px-4 py-2 text-sm font-medium border-2 rounded-full transition-all duration-200 !text-[#FF7A00] !border-[#FF7A00] hover:!bg-[#FF7A00] hover:!text-white active:!bg-[#E56A00] active:!text-white focus-visible:!bg-[#FF7A00] focus-visible:!text-white"
+            >
               Iniciar sesión
             </a>
-            <a href="/register" className="px-4 py-2 text-sm font-medium text-white rounded-full transition-opacity duration-200 hover:opacity-90 shadow-sm" style={{ background: "#FF7A00" }}>
+            <a
+              href="/register"
+              className="px-4 py-2 text-sm font-medium rounded-full transition-opacity duration-200 hover:opacity-90 shadow-sm !text-white"
+              style={{ background: "#FF7A00" }}
+            >
               Registrarse
             </a>
           </div>
@@ -45,10 +52,17 @@ export function Navbar({ mobileOpen, setMobileOpen }) {
               {l.label}
             </a>))}
           <div className="flex gap-3 pt-2">
-            <a href="/login" className="flex-1 text-center py-2 text-sm font-medium border-2 rounded-full" style={{ borderColor: "#FF7A00", color: "#FF7A00" }}>
+            <a
+              href="/login"
+              className="flex-1 text-center py-2 text-sm font-medium border-2 rounded-full !text-[#FF7A00] !border-[#FF7A00] active:!bg-[#FF7A00] active:!text-white hover:!bg-[#FF7A00] hover:!text-white"
+            >
               Iniciar sesión
             </a>
-            <a href="/register" className="flex-1 text-center py-2 text-sm font-medium text-white rounded-full" style={{ background: "#FF7A00" }}>
+            <a
+              href="/register"
+              className="flex-1 text-center py-2 text-sm font-medium rounded-full !text-white"
+              style={{ background: "#FF7A00" }}
+            >
               Registrarse
             </a>
           </div>
