@@ -1,8 +1,6 @@
 import { Eye, Pencil, Trash2, Power } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/shared/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, } from "@/shared/components/ui/dropdown-menu";
-import { MoreHorizontal } from "lucide-react";
 import { StatusBadge, userStatusMap } from "@/features/admin/components/StatusBadge";
 import { EmptyState } from "@/features/admin/components/EmptyState";
 import { userServices } from "../userServices";
@@ -53,19 +51,9 @@ export function UsersTable({ items, onDetail, onEdit, onDelete, onToggleStatus, 
                   <Button variant="ghost" size="sm" onClick={() => onToggleStatus(user)} style={{ color: "#1b5e20" }}>
                     <Power className="h-4 w-4"/>
                   </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="h-4 w-4"/>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onDelete(user)} className="text-destructive">
-                        <Trash2 className="h-4 w-4 mr-2"/>
-                        Eliminar
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <Button variant="ghost" size="sm" onClick={() => onDelete(user)} style={{ color: "#c62828" }} title="Eliminar">
+                    <Trash2 className="h-4 w-4"/>
+                  </Button>
                 </div>
               </TableCell>
             </TableRow>)))}

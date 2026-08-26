@@ -8,13 +8,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/shared/components/ui/table";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/shared/components/ui/dropdown-menu";
-import { MoreHorizontal } from "lucide-react";
+
 import { StatusBadge, groupStatusMap } from "@/features/admin/components/StatusBadge";
 import { EmptyState } from "@/features/admin/components/EmptyState";
 
@@ -109,22 +103,15 @@ export function GroupsTableFull({
                                             <Power className="h-4 w-4" />
                                         </Button>
                                     )}
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="sm">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem
-                                                onClick={() => onDelete(group)}
-                                                className="text-destructive"
-                                            >
-                                                <Trash2 className="h-4 w-4 mr-2" />
-                                                Eliminar
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => onDelete(group)}
+                                        style={{ color: "#c62828" }}
+                                        title="Eliminar"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
                                 </div>
                             </TableCell>
                         </TableRow>
