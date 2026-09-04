@@ -1,7 +1,47 @@
 import { Shield, Users } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card";
 import { Button } from "@/shared/components/ui/button";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/shared/components/ui/table";
+import { Checkbox } from "@/shared/components/ui/checkbox";
 import { ALL_PERMISSIONS, userServices } from "../userServices";
+
+const MODULE_LABELS = {
+    users: "Usuarios",
+    roles: "Roles",
+    tours: "Tours",
+    bookings: "Reservas",
+    clients: "Clientes",
+    sales: "Ventas",
+    reports: "Reportes",
+};
+const MODULE_ORDER = ["users", "roles", "tours", "bookings", "clients", "sales", "reports"];
+const ACTION_COLUMNS = [
+    { key: "view", label: "Ver" },
+    { key: "create", label: "Crear" },
+    { key: "edit", label: "Editar" },
+    { key: "delete", label: "Eliminar" },
+    { key: "export", label: "Exportar" },
+];
+
+function buildPermissionsMatrix() {
+    const matrix = {};
+    MODULE_ORDER.forEach((mod) => {
+        matrix[mod] = { view: null, create: null, edit: null, delete: null, export: null };
+    });
+    ALL_PERMISSIONS.forEach((perm) => {
+        const [mod, action] = perm.key.split(".");
+        if (matrix[mod] && Object.prototype.hasOwnProperty.call(matrix[mod], action)) {
+            matrix[mod][action] = perm.id;
+        }
+    });
+    return MODULE_ORDER.map((mod) => ({
+        moduleKey: mod,
+        moduleLabel: MODULE_LABELS[mod] ?? mod,
+        actions: matrix[mod],
+    }));
+}
+const PERMISSIONS_MATRIX = buildPermissionsMatrix();
+
 export function RolesList({ roles }) {
     return (<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {roles.map((role) => (<Card key={role.id} className="border border-border">
@@ -39,17 +79,51 @@ export function RolesList({ roles }) {
         </Card>))}
     </div>);
 }
-export function PermissionsGrid({ selected, onToggle }) {
-    const selectedIds = selected || [];
-    return (<div className="grid grid-cols-2 md:grid-cols-3 gap-3 py-4">
-      {ALL_PERMISSIONS.map((perm) => {
-            const isActive = selectedIds.includes(perm.id);
-            return (<div key={perm.id} onClick={() => onToggle(perm.id)} className={`cursor-pointer rounded-lg border p-3 text-sm transition ${isActive
-                    ? "bg-primary/10 border-primary"
-                    : "bg-muted/40 hover:bg-muted"}`}>
-            <div className="font-medium">{perm.key}</div>
-            <div className="text-xs text-muted-foreground">{perm.label}</div>
-          </div>);
-        })}
+
+export function PermissionsTable({ selected, onToggle, disabled = false }) {
+    const selectedIds = (selected || []).map((id) => Number(id));
+    return (<div className="py-3">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-[30%] min-w-[140px]">Módulo</TableHead>
+            {ACTION_COLUMNS.map((col) => (
+              <TableHead key={col.key} className="w-[14%] min-w-[72px] text-center">
+                {col.label}
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {PERMISSIONS_MATRIX.map((row) => (
+            <TableRow key={row.moduleKey}>
+              <TableCell className="font-medium">{row.moduleLabel}</TableCell>
+              {ACTION_COLUMNS.map((col) => {
+                const permId = row.actions[col.key];
+                const isApplicable = permId !== null;
+                const isChecked = isApplicable && selectedIds.includes(permId);
+                return (
+                  <TableCell key={col.key} className="text-center">
+                    {isApplicable ? (
+                      <Checkbox
+                        disabled={disabled}
+                        checked={isChecked}
+                        onCheckedChange={() => {
+                          if (!disabled && typeof onToggle === "function") {
+                            onToggle(permId);
+                          }
+                        }}
+                        className="mx-auto"
+                      />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>);
 }

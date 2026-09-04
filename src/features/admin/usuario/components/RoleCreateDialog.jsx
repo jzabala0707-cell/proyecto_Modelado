@@ -6,7 +6,7 @@ import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
 import { Switch } from "@/shared/components/ui/switch";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, } from "@/shared/components/ui/form";
-import { PermissionsGrid } from "./RolesList";
+import { PermissionsTable } from "./RolesList";
 import { roleSchema } from "../validations/userValidation";
 
 export function RoleCreateDialog({ open, onOpenChange, formData, setFormData, onTogglePermission, onSubmit, isEdit = false, }) {
@@ -108,7 +108,7 @@ export function RoleCreateDialog({ open, onOpenChange, formData, setFormData, on
                   <FormItem>
                     <FormLabel>Permisos ({(field.value || []).length} seleccionados)</FormLabel>
                     <FormControl>
-                      <PermissionsGrid
+                      <PermissionsTable
                         selected={field.value || []}
                         onToggle={(permId) => {
                           onTogglePermission(permId);
