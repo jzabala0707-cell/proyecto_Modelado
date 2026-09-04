@@ -47,7 +47,7 @@ export function GroupsGrid({ groups, onDetail }) {
             </div>
         );
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {items.map((s) => {
                 const disp = s.cupos_disponibles ?? s.cupo_maximo;
                 const max = s.cupo_maximo ?? 0;
