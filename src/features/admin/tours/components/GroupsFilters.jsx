@@ -9,28 +9,81 @@ import {
 } from "@/shared/components/ui/select";
 import { Button } from "@/shared/components/ui/button";
 import { X } from "lucide-react";
-import { GROUP_STATUS_OPTIONS, GUIDE_NAME_OPTIONS } from "../tourServices";
+import { SALIDA_STATUS_OPTIONS, mockTours } from "../tourServices";
+import { mockGuides } from "@/features/admin/guias/guideServices";
+
+const STATUS_FILTER_OPTIONS = SALIDA_STATUS_OPTIONS;
+
+const GUIA_FILTER_OPTIONS = [
+    { value: "all", label: "Todos los guías" },
+    ...(Array.isArray(mockGuides)
+        ? mockGuides.map((g) => ({
+              value: String(g.id_guia ?? g.id),
+              label: g.nombre ?? g.name,
+          }))
+        : []),
+];
+
+const TOUR_FILTER_OPTIONS = [
+    { value: "all", label: "Todos los tours" },
+    ...(Array.isArray(mockTours)
+        ? mockTours.map((t) => ({
+              value: String(t.id_tour ?? t.id),
+              label: t.nombre ?? t.name,
+          }))
+        : []),
+];
 
 export function GroupsFilters({ filters, setFilters, onClear }) {
-    const allStatuses = GROUP_STATUS_OPTIONS;
-    const allGuides = [{ value: "all", label: "Todos los guías" }, ...GUIDE_NAME_OPTIONS];
+    const allStatuses = STATUS_FILTER_OPTIONS;
+    const allGuides = GUIA_FILTER_OPTIONS;
+    const allTours = TOUR_FILTER_OPTIONS;
 
     return (
         <Card>
             <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="space-y-2">
                         <Label>Estado</Label>
                         <Select
-                            value={filters.status}
-                            onValueChange={(value) => setFilters({ ...filters, status: value })}
+                            value={filters.estado}
+                            onValueChange={(value) =>
+                                setFilters({ ...filters, estado: value })
+                            }
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Seleccionar estado" />
                             </SelectTrigger>
                             <SelectContent>
                                 {allStatuses.map((opt) => (
-                                    <SelectItem key={opt.value} value={opt.value}>
+                                    <SelectItem
+                                        key={opt.value}
+                                        value={opt.value}
+                                    >
+                                        {opt.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Tour</Label>
+                        <Select
+                            value={filters.id_tour}
+                            onValueChange={(value) =>
+                                setFilters({ ...filters, id_tour: value })
+                            }
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar tour" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {allTours.map((opt) => (
+                                    <SelectItem
+                                        key={opt.value}
+                                        value={opt.value}
+                                    >
                                         {opt.label}
                                     </SelectItem>
                                 ))}
@@ -41,15 +94,20 @@ export function GroupsFilters({ filters, setFilters, onClear }) {
                     <div className="space-y-2">
                         <Label>Guía</Label>
                         <Select
-                            value={filters.guide}
-                            onValueChange={(value) => setFilters({ ...filters, guide: value })}
+                            value={filters.id_guia}
+                            onValueChange={(value) =>
+                                setFilters({ ...filters, id_guia: value })
+                            }
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Seleccionar guía" />
                             </SelectTrigger>
                             <SelectContent>
                                 {allGuides.map((opt) => (
-                                    <SelectItem key={opt.value} value={opt.value}>
+                                    <SelectItem
+                                        key={opt.value}
+                                        value={opt.value}
+                                    >
                                         {opt.label}
                                     </SelectItem>
                                 ))}

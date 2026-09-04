@@ -6,7 +6,7 @@ import { StatusBadge, clientStatusMap } from "@/features/admin/components/Status
 import { EmptyState } from "@/features/admin/components/EmptyState";
 import { Badge } from "@/shared/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
-import { clientServices } from "@/features/admin/reservas/bookingServices";
+import { clientServices } from "@/features/admin/clientes/clientServices";
 export function ClientsTableFull({
     items,
     onDetail,

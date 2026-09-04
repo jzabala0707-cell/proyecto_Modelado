@@ -6,24 +6,30 @@ import { useCrudState } from "@/features/admin/hooks/useCrudState";
 import { useDialogs } from "@/features/admin/hooks/useDialogs";
 import { usePagination } from "@/features/admin/hooks/usePagination";
 import { useSortableTable } from "@/features/admin/hooks/useSortableTable";
+
 export function useUsersPage() {
     const crud = useCrudState(mockUsers, { name: "Usuario" });
     const dialogs = useDialogs();
     const [formData, setFormData] = useState(emptyUserForm);
     const [filters, setFilters] = useState({
-        role: "all",
-        status: "all",
-        department: "all",
+        rol: "all",
+        estado: "all",
+        departamento: "all",
     });
-    const search = useSearchFilter(crud.items, (u) => [u.name, u.email, u.phone], (u, f) => {
-        const matchesRole = f.role === "all" || u.role === f.role;
-        const matchesStatus = f.status === "all" || u.status === f.status;
-        const matchesDept = f.department === "all" || u.department === f.department;
-        return matchesRole && matchesStatus && matchesDept;
+    const search = useSearchFilter(crud.items, (u) => [u.nombre, u.apellido, u.correo, u.telefono], (u, f) => {
+        const rolIds = u.rolIds ?? (u.rolId != null ? [Number(u.rolId)] : []);
+        const matchesRol =
+            f.rol === "all" ||
+            rolIds.includes(Number(f.rol)) ||
+            (u.roles || []).some((r) => String(r.id) === String(f.rol));
+        const estado = u.estado ?? u.status;
+        const matchesEstado = f.estado === "all" || estado === f.estado;
+        const matchesDept = f.departamento === "all" || (u.departamento ?? u.department) === f.departamento;
+        return matchesRol && matchesEstado && matchesDept;
     }, filters);
     const sortable = useSortableTable(search.filteredData);
     const pagination = usePagination(sortable.sortedItems, 10);
-    const hasActiveFilters = filters.role !== "all" || filters.status !== "all" || filters.department !== "all" || search.searchTerm !== "";
+    const hasActiveFilters = filters.rol !== "all" || filters.estado !== "all" || filters.departamento !== "all" || search.searchTerm !== "";
     const handleCreate = useCallback(() => {
         const created = crud.handleCreate(formData);
         dialogs.closeCreate();
@@ -43,26 +49,32 @@ export function useUsersPage() {
         dialogs.closeDelete();
     }, [crud, dialogs]);
     const handleToggleStatus = useCallback((user) => {
-        crud.handleToggleStatus(user.id, "status");
+        crud.handleToggleStatus(user.id, "estado");
     }, [crud]);
     const openCreate = useCallback(() => {
         setFormData(emptyUserForm);
         dialogs.openCreate();
     }, [dialogs]);
     const openEdit = useCallback((user) => {
+        const primerRol =
+            user.rolId ??
+            (Array.isArray(user.rolIds) && user.rolIds.length > 0 ? Number(user.rolIds[0]) : "") ??
+            (Array.isArray(user.roles) && user.roles.length > 0 ? Number(user.roles[0].id) : "");
         setFormData({
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            role: user.role,
-            status: user.status,
-            department: user.department ?? "",
-            address: user.address ?? "",
+            firstName: user.nombre ?? user.firstName ?? "",
+            lastName: user.apellido ?? user.lastName ?? "",
+            correo: user.correo ?? user.email ?? "",
+            telefono: user.telefono ?? user.phone ?? "",
+            rolId: primerRol,
+            estado: user.estado ?? user.status ?? "ACTIVO",
+            cargo: user.cargo ?? "",
+            departamento: user.departamento ?? user.department ?? "",
+            direccion: user.direccion ?? user.address ?? "",
         });
         dialogs.openEdit(user);
     }, [dialogs]);
     const clearFilters = useCallback(() => {
-        setFilters({ role: "all", status: "all", department: "all" });
+        setFilters({ rol: "all", estado: "all", departamento: "all" });
         search.setSearchTerm("");
         sortable.resetSort();
         toast.info("Filtros limpiados");
@@ -95,38 +107,43 @@ export function useUsersPage() {
         handleExportCSV,
     };
 }
+
 export function useRolesPage() {
     const crud = useCrudState(mockRoles, { name: "Rol" });
     const dialogs = useDialogs();
     const [formData, setFormData] = useState(emptyRoleForm);
     const [filters, setFilters] = useState({
-        status: "all",
+        activo: "all",
     });
     const search = useSearchFilter(
         crud.items,
-        (r) => [r.name, r.description],
+        (r) => [r.nombre, r.descripcion],
         (r, f) => {
-            const matchesStatus = f.status === "all" || r.status === f.status;
-            return matchesStatus;
+            const activo = typeof r.activo === "boolean" ? r.activo : r.status === "active";
+            const matchesActivo = f.activo === "all" ||
+                (f.activo === "active" && activo === true) ||
+                (f.activo === "inactive" && activo === false);
+            return matchesActivo;
         },
         filters
     );
-    const sortable = useSortableTable(search.filteredData, "name");
+    const sortable = useSortableTable(search.filteredData, "nombre");
     const pagination = usePagination(sortable.sortedItems, 10);
-    const togglePermission = useCallback((permission) => {
+    const togglePermission = useCallback((permId) => {
         setFormData((prev) => {
-            if (prev.permissions.includes(permission)) {
-                return { ...prev, permissions: prev.permissions.filter((p) => p !== permission) };
+            const ids = prev.permisosIds || [];
+            if (ids.includes(permId)) {
+                return { ...prev, permisosIds: ids.filter((p) => p !== permId) };
             }
-            return { ...prev, permissions: [...prev.permissions, permission] };
+            return { ...prev, permisosIds: [...ids, permId] };
         });
     }, []);
-    const hasActiveFilters = filters.status !== "all" || search.searchTerm !== "";
+    const hasActiveFilters = filters.activo !== "all" || search.searchTerm !== "";
     const handleCreate = useCallback(() => {
         crud.handleCreate({
             ...formData,
-            usersCount: 0,
-            status: "active",
+            usuarios_asignados: 0,
+            creado_en: new Date().toISOString().split("T")[0],
         });
         dialogs.closeCreate();
         setFormData(emptyRoleForm);
@@ -143,7 +160,7 @@ export function useRolesPage() {
         dialogs.closeDelete();
     }, [crud, dialogs]);
     const handleToggleStatus = useCallback((role) => {
-        crud.handleToggleStatus(role.id, "status");
+        crud.handleToggleStatus(role.id, "activo");
     }, [crud]);
     const openCreate = useCallback(() => {
         setFormData(emptyRoleForm);
@@ -151,28 +168,29 @@ export function useRolesPage() {
     }, [dialogs]);
     const openEdit = useCallback((role) => {
         setFormData({
-            name: role.name,
-            description: role.description,
-            permissions: [...role.permissions],
+            nombre: role.nombre ?? "",
+            descripcion: role.descripcion ?? "",
+            activo: typeof role.activo === "boolean" ? role.activo : (role.status === "active"),
+            permisosIds: [...(role.permisosIds ?? role.permisos_ids ?? [])],
         });
         dialogs.openEdit(role);
     }, [dialogs]);
     const clearFilters = useCallback(() => {
-        setFilters({ status: "all" });
+        setFilters({ activo: "all" });
         search.setSearchTerm("");
         sortable.resetSort();
         toast.info("Filtros limpiados");
     }, [search, sortable]);
     const handleExportCSV = useCallback(() => {
-        const headers = ["ID", "Nombre", "Descripción", "Permisos", "Usuarios Asignados", "Estado", "Fecha Creación"];
+        const headers = ["ID", "Nombre", "Descripción", "Permisos", "Usuarios Asignados", "Activo", "Fecha Creación"];
         const rows = search.filteredData.map((r) => [
             r.id,
-            r.name,
-            r.description,
-            r.permissions.length,
-            r.usersCount,
-            r.status,
-            r.createdAt,
+            r.nombre,
+            r.descripcion ?? "",
+            (r.permisosIds ?? r.permisos_ids ?? []).length,
+            r.usuarios_asignados ?? r.usersCount ?? 0,
+            (r.activo === true) ? "Sí" : "No",
+            r.creado_en ?? r.createdAt ?? "",
         ]);
         const csv = [
             headers.join(","),

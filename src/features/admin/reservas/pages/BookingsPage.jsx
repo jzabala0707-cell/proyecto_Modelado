@@ -30,8 +30,10 @@ export function BookingsPage() {
 
                 <BookingsStats
                     total={state.stats.total}
-                    confirmed={state.stats.confirmed}
-                    pending={state.stats.pending}
+                    confirmadas={state.stats.confirmadas}
+                    pendientes={state.stats.pendientes}
+                    canceladas={state.stats.canceladas}
+                    completadas={state.stats.completadas}
                     revenue={state.stats.revenue}
                 />
 

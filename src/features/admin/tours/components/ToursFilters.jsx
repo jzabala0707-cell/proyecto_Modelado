@@ -9,29 +9,43 @@ import {
 } from "@/shared/components/ui/select";
 import { Button } from "@/shared/components/ui/button";
 import { X } from "lucide-react";
-import { TOUR_TYPE_OPTIONS, TOUR_STATUS_OPTIONS, LANGUAGE_OPTIONS } from "../tourServices";
+import { TOUR_STATUS_OPTIONS, mockCategoriasTour } from "../tourServices";
+
+const CATEGORIA_FILTER_OPTIONS = [
+    { value: "all", label: "Todas las categorías" },
+    ...(Array.isArray(mockCategoriasTour)
+        ? mockCategoriasTour.map((c) => ({
+              value: String(c.id_categoria ?? c.id),
+              label: c.nombre,
+          }))
+        : []),
+];
 
 export function ToursFilters({ filters, setFilters, onClear }) {
-    const allTypes = [{ value: "all", label: "Todos los tipos" }, ...TOUR_TYPE_OPTIONS];
+    const allCategorias = CATEGORIA_FILTER_OPTIONS;
     const allStatuses = TOUR_STATUS_OPTIONS;
-    const allLanguages = LANGUAGE_OPTIONS;
 
     return (
         <Card>
             <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                         <Label>Estado</Label>
                         <Select
-                            value={filters.status}
-                            onValueChange={(value) => setFilters({ ...filters, status: value })}
+                            value={filters.estado}
+                            onValueChange={(value) =>
+                                setFilters({ ...filters, estado: value })
+                            }
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Seleccionar estado" />
                             </SelectTrigger>
                             <SelectContent>
                                 {allStatuses.map((opt) => (
-                                    <SelectItem key={opt.value} value={opt.value}>
+                                    <SelectItem
+                                        key={opt.value}
+                                        value={opt.value}
+                                    >
                                         {opt.label}
                                     </SelectItem>
                                 ))}
@@ -40,36 +54,22 @@ export function ToursFilters({ filters, setFilters, onClear }) {
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Tipo</Label>
+                        <Label>Categoría</Label>
                         <Select
-                            value={filters.type}
-                            onValueChange={(value) => setFilters({ ...filters, type: value })}
+                            value={filters.id_categoria}
+                            onValueChange={(value) =>
+                                setFilters({ ...filters, id_categoria: value })
+                            }
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar tipo" />
+                                <SelectValue placeholder="Seleccionar categoría" />
                             </SelectTrigger>
                             <SelectContent>
-                                {allTypes.map((opt) => (
-                                    <SelectItem key={opt.value} value={opt.value}>
-                                        {opt.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label>Idioma</Label>
-                        <Select
-                            value={filters.language}
-                            onValueChange={(value) => setFilters({ ...filters, language: value })}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar idioma" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {allLanguages.map((opt) => (
-                                    <SelectItem key={opt.value} value={opt.value}>
+                                {allCategorias.map((opt) => (
+                                    <SelectItem
+                                        key={opt.value}
+                                        value={opt.value}
+                                    >
                                         {opt.label}
                                     </SelectItem>
                                 ))}

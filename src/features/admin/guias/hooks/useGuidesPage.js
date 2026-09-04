@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
-import { mockGuides, emptyGuideForm, guideServices } from "../guideServices";
+import { mockGuias, emptyGuideForm, guideServices, IDIOMA_OPTIONS } from "../guideServices";
 import { useSearchFilter } from "@/features/admin/hooks/useSearchFilter";
 import { useCrudState } from "@/features/admin/hooks/useCrudState";
 import { useDialogs } from "@/features/admin/hooks/useDialogs";
@@ -8,23 +8,55 @@ import { usePagination } from "@/features/admin/hooks/usePagination";
 import { useSortableTable } from "@/features/admin/hooks/useSortableTable";
 
 export function useGuidesPage() {
-    const crud = useCrudState(mockGuides, { name: "Guía" });
+    const crud = useCrudState(mockGuias, { name: "Guía" });
     const dialogs = useDialogs();
     const [formData, setFormData] = useState(emptyGuideForm);
     const [filters, setFilters] = useState({
-        status: "all",
-        language: "all",
-        specialty: "all",
+        estado_usuario: "all",
+        disponibilidad: "all",
+        activo: "all",
+        id_idioma: "all",
     });
 
     const search = useSearchFilter(
         crud.items,
-        (g) => [g.name, g.email, g.phone, ...(g.specialties ?? []), ...(g.languages ?? [])],
+        (g) => {
+            const idiomasNombres = (g.idiomas ?? [])
+                .map((i) => IDIOMA_OPTIONS.find((o) => o.value === i.id_idioma)?.label ?? "")
+                .filter(Boolean);
+            return [
+                g.firstName ?? "",
+                g.lastName ?? "",
+                g.correo ?? "",
+                g.telefono ?? "",
+                g.especialidad ?? "",
+                g.tipo_documento ?? "",
+                g.numero_documento ?? "",
+                ...idiomasNombres,
+            ];
+        },
         (g, f) => {
-            const matchesStatus = f.status === "all" || g.status === f.status;
-            const matchesLanguage = f.language === "all" || (g.languages ?? []).includes(f.language);
-            const matchesSpecialty = f.specialty === "all" || (g.specialties ?? []).includes(f.specialty);
-            return matchesStatus && matchesLanguage && matchesSpecialty;
+            const matchesEstado =
+                f.estado_usuario === "all" || g.estado === f.estado_usuario;
+            const matchesDisponibilidad =
+                f.disponibilidad === "all" ||
+                (f.disponibilidad === "disponible" && g.disponibilidad === true) ||
+                (f.disponibilidad === "no_disponible" && g.disponibilidad === false);
+            const matchesActivo =
+                f.activo === "all" ||
+                (f.activo === "activo" && g.activo === true) ||
+                (f.activo === "inactivo" && g.activo === false);
+            const matchesIdioma =
+                f.id_idioma === "all" ||
+                (g.idiomas ?? []).some(
+                    (i) => Number(i.id_idioma) === Number(f.id_idioma)
+                );
+            return (
+                matchesEstado &&
+                matchesDisponibilidad &&
+                matchesActivo &&
+                matchesIdioma
+            );
         },
         filters
     );
@@ -33,31 +65,70 @@ export function useGuidesPage() {
     const pagination = usePagination(sortable.sortedItems, 10);
 
     const hasActiveFilters =
-        filters.status !== "all" ||
-        filters.language !== "all" ||
-        filters.specialty !== "all" ||
+        filters.estado_usuario !== "all" ||
+        filters.disponibilidad !== "all" ||
+        filters.activo !== "all" ||
+        filters.id_idioma !== "all" ||
         search.searchTerm !== "";
 
     const handleCreate = useCallback(() => {
-        crud.handleCreate(formData);
+        const creado = guideServices.createGuia(formData);
+        if (creado) {
+            crud.items = guideServices.getGuias();
+            toast.success("Guía creado exitosamente");
+        } else {
+            toast.error("No se pudo crear el guía");
+        }
         dialogs.closeCreate();
         setFormData(emptyGuideForm);
-    }, [crud, formData, dialogs]);
+    }, [formData, dialogs, crud]);
 
     const handleEdit = useCallback(() => {
         if (!dialogs.selectedItem) return;
-        crud.handleEdit(dialogs.selectedItem.id, formData);
+        const id = dialogs.selectedItem.id_guia ?? dialogs.selectedItem.id_usuario;
+        const actualizado = guideServices.updateGuia(id, formData);
+        if (actualizado) {
+            crud.items = guideServices.getGuias();
+            toast.success("Guía actualizado exitosamente");
+        } else {
+            toast.error("No se pudo actualizar el guía");
+        }
         dialogs.closeEdit();
     }, [crud, dialogs, formData]);
 
     const handleDelete = useCallback(() => {
         if (!dialogs.selectedItem) return;
-        crud.handleDelete(dialogs.selectedItem.id);
+        const id = dialogs.selectedItem.id_guia ?? dialogs.selectedItem.id_usuario;
+        const ok = guideServices.deleteGuia(id);
+        if (ok) {
+            crud.items = guideServices.getGuias();
+            toast.success("Guía eliminado exitosamente");
+        } else {
+            toast.error("No se pudo eliminar el guía");
+        }
         dialogs.closeDelete();
     }, [crud, dialogs]);
 
-    const handleToggleStatus = useCallback((guide) => {
-        crud.handleToggleStatus(guide.id, "status");
+    const handleToggleActivo = useCallback((guide) => {
+        const id = guide.id_guia ?? guide.id_usuario;
+        const actual = guideServices.getGuiaById(id);
+        if (!actual) return;
+        guideServices.updateGuia(id, { activo: !actual.activo });
+        crud.items = guideServices.getGuias();
+        toast.success(
+            `Guía ${actual.activo ? "desactivado" : "activado"} exitosamente`
+        );
+    }, [crud]);
+
+    const handleToggleDisponibilidad = useCallback((guide) => {
+        const id = guide.id_guia ?? guide.id_usuario;
+        const actual = guideServices.getGuiaById(id);
+        if (!actual) return;
+        guideServices.updateGuia(id, { disponibilidad: !actual.disponibilidad });
+        crud.items = guideServices.getGuias();
+        toast.success(
+            `Disponibilidad ${actual.disponibilidad ? "desactivada" : "activada"} exitosamente`
+        );
     }, [crud]);
 
     const openCreate = useCallback(() => {
@@ -66,24 +137,49 @@ export function useGuidesPage() {
     }, [dialogs]);
 
     const openEdit = useCallback((guide) => {
+        const id = guide.id_guia ?? guide.id_usuario;
+        const datosCompletos = guideServices.getGuiaById(id) ?? guide;
         setFormData({
-            name: guide.name,
-            email: guide.email,
-            phone: guide.phone,
-            status: guide.status,
-            languages: guide.languages ?? [],
-            specialties: guide.specialties ?? [],
-            address: guide.address ?? "",
-            bio: guide.bio ?? "",
-            rating: guide.rating ?? 0,
-            toursCount: guide.toursCount ?? 0,
-            joinedAt: guide.joinedAt ?? new Date().toISOString().split("T")[0],
+            firstName: datosCompletos.firstName ?? "",
+            lastName: datosCompletos.lastName ?? "",
+            correo: datosCompletos.correo ?? "",
+            telefono: datosCompletos.telefono ?? "",
+            estado: datosCompletos.estado ?? "ACTIVO",
+            tipo_documento: datosCompletos.tipo_documento ?? "CC",
+            numero_documento: datosCompletos.numero_documento ?? "",
+            fecha_nacimiento: datosCompletos.fecha_nacimiento ?? "",
+            genero: datosCompletos.genero ?? "",
+            nacionalidad: datosCompletos.nacionalidad ?? "",
+            pais_residencia: datosCompletos.pais_residencia ?? "",
+            ciudad_residencia: datosCompletos.ciudad_residencia ?? "",
+            direccion: datosCompletos.direccion ?? "",
+            especialidad: datosCompletos.especialidad ?? "",
+            experiencia_anios:
+                datosCompletos.experiencia_anios ?? datosCompletos.experiencia_anios === 0
+                    ? datosCompletos.experiencia_anios
+                    : "",
+            certificaciones: datosCompletos.certificaciones ?? "",
+            foto_url: datosCompletos.foto_url ?? "",
+            disponibilidad: Boolean(datosCompletos.disponibilidad),
+            activo: Boolean(datosCompletos.activo),
+            biografia: datosCompletos.biografia ?? "",
+            idiomas: datosCompletos.idiomas ?? [],
+            certificaciones_puente: datosCompletos.certificaciones_puente ?? [],
+            rating: datosCompletos.rating ?? 0,
+            toursCount: datosCompletos.toursCount ?? 0,
+            joinedAt:
+                datosCompletos.joinedAt ?? new Date().toISOString().split("T")[0],
         });
-        dialogs.openEdit(guide);
+        dialogs.openEdit(datosCompletos);
     }, [dialogs]);
 
     const clearFilters = useCallback(() => {
-        setFilters({ status: "all", language: "all", specialty: "all" });
+        setFilters({
+            estado_usuario: "all",
+            disponibilidad: "all",
+            activo: "all",
+            id_idioma: "all",
+        });
         search.setSearchTerm("");
         sortable.resetSort();
         toast.info("Filtros limpiados");
@@ -94,13 +190,17 @@ export function useGuidesPage() {
         toast.success("Datos exportados a CSV");
     }, [search]);
 
-    const stats = guideServices.computeStats(crud.items, search.filteredData.length);
+    const stats = guideServices.computeStats(
+        crud.items,
+        search.filteredData.length
+    );
 
     const handlers = {
         handleCreate,
         handleEdit,
         handleDelete,
-        handleToggleStatus,
+        handleToggleActivo,
+        handleToggleDisponibilidad,
         openCreate,
         openEdit,
         clearFilters,

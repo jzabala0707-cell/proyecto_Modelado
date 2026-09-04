@@ -22,9 +22,9 @@ export function UsersPage() {
               Crear Usuario
             </Button>}/>
 
-        <UsersStats total={state.stats.total} active={state.stats.active} inactive={state.stats.inactive} filtered={state.stats.filtered}/>
+        <UsersStats total={state.stats.total} active={state.stats.active} inactive={state.stats.inactive} blocked={state.stats.blocked} filtered={state.stats.filtered}/>
 
-        <SearchToolbar searchTerm={state.search.searchTerm} onSearchChange={state.search.setSearchTerm} searchPlaceholder="Buscar usuario..." statusFilter={state.filters.status} onStatusFilterChange={(value) => state.setFilters({ ...state.filters, status: value })} statusOptions={USER_STATUS_OPTIONS} hasActiveFilters={state.hasActiveFilters} onToggleFilters={state.dialogs.toggleFilters} onExport={state.handleExportCSV}/>
+        <SearchToolbar searchTerm={state.search.searchTerm} onSearchChange={state.search.setSearchTerm} searchPlaceholder="Buscar usuario..." statusFilter={state.filters.estado ?? state.filters.status ?? "all"} onStatusFilterChange={(value) => state.setFilters({ ...state.filters, estado: value })} statusOptions={USER_STATUS_OPTIONS} hasActiveFilters={state.hasActiveFilters} onToggleFilters={state.dialogs.toggleFilters} onExport={state.handleExportCSV}/>
 
         {state.dialogs.isFilterOpen && (<UsersFilters filters={state.filters} setFilters={state.setFilters} onClear={state.clearFilters}/>)}
 

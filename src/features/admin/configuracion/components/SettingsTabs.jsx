@@ -138,7 +138,7 @@ export function ProfileForm({ profile, onChange, onSave }) {
               />
               <FormField
                 control={form.control}
-                name="position"
+                name="cargo"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Cargo</FormLabel>
@@ -151,7 +151,7 @@ export function ProfileForm({ profile, onChange, onSave }) {
               />
               <FormField
                 control={form.control}
-                name="department"
+                name="departamento"
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
                     <FormLabel>Departamento</FormLabel>
@@ -191,11 +191,12 @@ export function NotificationsForm({ notifications, onChange, onSave }) {
     });
 
     const items = [
-        { key: "emailBookings", title: "Reservas por Email", desc: "Recibe email cuando haya una nueva reserva" },
-        { key: "emailClients", title: "Nuevos Clientes", desc: "Notifica cuando se registra un cliente" },
-        { key: "emailReports", title: "Reportes Diarios", desc: "Resumen diario a tu bandeja" },
-        { key: "smsBookings", title: "SMS de Reservas", desc: "Alertas rápidas por SMS" },
-        { key: "pushAll", title: "Notificaciones Push", desc: "Notificaciones en navegador móvil" },
+        { key: "notif_email_reservas", title: "Reservas por Email", desc: "Recibe email cuando haya una nueva reserva" },
+        { key: "notif_email_usuarios", title: "Nuevos Clientes / Usuarios", desc: "Notifica cuando se registra un usuario" },
+        { key: "notif_email_pagos", title: "Reportes / Pagos Diarios", desc: "Resumen diario y alertas de pagos" },
+        { key: "notif_push_urgente", title: "Alertas Push Urgentes", desc: "Notificaciones críticas (SMS/Push)" },
+        { key: "notif_push_all", title: "Notificaciones Push Generales", desc: "Notificaciones en navegador móvil" },
+        { key: "notif_push_pagos", title: "Push de Pagos y Abonos", desc: "Push cada abono / confirmación de pago" },
     ];
 
     return (<TabsContent value="notifications">
@@ -297,11 +298,11 @@ export function SecurityForm({ security, onChange, onSave }) {
             <div className="space-y-4 border-t pt-4">
               <FormField
                 control={form.control}
-                name="twoFactorEnabled"
+                name="fa_activado"
                 render={({ field }) => (
                   <FormItem className="flex items-center justify-between flex-row">
                     <div>
-                      <div className="font-medium">Autenticación de dos factores</div>
+                      <div className="font-medium">Autenticación de dos factores (2FA)</div>
                       <div className="text-sm text-muted-foreground">Añade una capa extra de seguridad</div>
                     </div>
                     <FormControl>
@@ -312,7 +313,7 @@ export function SecurityForm({ security, onChange, onSave }) {
               />
               <FormField
                 control={form.control}
-                name="sessionTimeout"
+                name="session_timeout_min"
                 render={({ field }) => (
                   <FormItem className="flex items-center justify-between flex-row">
                     <div>
@@ -330,6 +331,21 @@ export function SecurityForm({ security, onChange, onSave }) {
                       />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="alert_sesiones_nuevas"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between flex-row">
+                    <div>
+                      <div className="font-medium">Alertar sesiones nuevas</div>
+                      <div className="text-sm text-muted-foreground">Email cuando se detecte un login desde un dispositivo nuevo</div>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
                   </FormItem>
                 )}
               />
@@ -368,7 +384,7 @@ export function PreferencesForm({ preferences, onChange, onSave }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <FormField
                 control={form.control}
-                name="language"
+                name="idioma"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Idioma</FormLabel>
@@ -379,9 +395,9 @@ export function PreferencesForm({ preferences, onChange, onSave }) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="Spanish">Español</SelectItem>
-                        <SelectItem value="English">English</SelectItem>
-                        <SelectItem value="Portuguese">Português</SelectItem>
+                        <SelectItem value="es">Español</SelectItem>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="pt">Português</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -390,7 +406,7 @@ export function PreferencesForm({ preferences, onChange, onSave }) {
               />
               <FormField
                 control={form.control}
-                name="currency"
+                name="moneda"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Moneda</FormLabel>
@@ -412,7 +428,7 @@ export function PreferencesForm({ preferences, onChange, onSave }) {
               />
               <FormField
                 control={form.control}
-                name="timezone"
+                name="zona_horaria"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Zona horaria</FormLabel>
@@ -434,7 +450,7 @@ export function PreferencesForm({ preferences, onChange, onSave }) {
               />
               <FormField
                 control={form.control}
-                name="dateFormat"
+                name="formato_fecha"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Formato de fecha</FormLabel>
@@ -456,7 +472,7 @@ export function PreferencesForm({ preferences, onChange, onSave }) {
               />
               <FormField
                 control={form.control}
-                name="defaultTab"
+                name="pestana_default"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Página de inicio</FormLabel>
@@ -479,7 +495,7 @@ export function PreferencesForm({ preferences, onChange, onSave }) {
             </div>
             <FormField
               control={form.control}
-              name="compactView"
+              name="vista_compacta"
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between border-t pt-4 flex-row">
                   <div>
@@ -526,7 +542,7 @@ export function BillingForm({ billing, onChange, onSave }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="companyName"
+                name="factura_empresa"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Empresa</FormLabel>
@@ -539,7 +555,7 @@ export function BillingForm({ billing, onChange, onSave }) {
               />
               <FormField
                 control={form.control}
-                name="taxId"
+                name="factura_nit"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>NIT / Identificación</FormLabel>
@@ -552,7 +568,7 @@ export function BillingForm({ billing, onChange, onSave }) {
               />
               <FormField
                 control={form.control}
-                name="address"
+                name="factura_direccion"
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
                     <FormLabel>Dirección</FormLabel>
@@ -565,7 +581,7 @@ export function BillingForm({ billing, onChange, onSave }) {
               />
               <FormField
                 control={form.control}
-                name="city"
+                name="factura_ciudad"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Ciudad</FormLabel>
@@ -578,7 +594,7 @@ export function BillingForm({ billing, onChange, onSave }) {
               />
               <FormField
                 control={form.control}
-                name="country"
+                name="factura_pais"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>País</FormLabel>
@@ -591,7 +607,7 @@ export function BillingForm({ billing, onChange, onSave }) {
               />
               <FormField
                 control={form.control}
-                name="invoiceEmail"
+                name="factura_email"
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
                     <FormLabel>Email de facturación</FormLabel>
@@ -640,7 +656,7 @@ export function IntegrationsForm({ integrations, onChange, onSave }) {
               <div className="p-4 border rounded-lg space-y-3">
                 <FormField
                   control={form.control}
-                  name="stripeEnabled"
+                  name="stripe_enabled"
                   render={({ field }) => (
                     <FormItem className="flex items-center justify-between flex-row">
                       <div>
@@ -655,7 +671,7 @@ export function IntegrationsForm({ integrations, onChange, onSave }) {
                 />
                 <FormField
                   control={form.control}
-                  name="stripeApiKey"
+                  name="stripe_api_key"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>API Key Stripe</FormLabel>
@@ -696,7 +712,7 @@ export function IntegrationsForm({ integrations, onChange, onSave }) {
               <div className="p-4 border rounded-lg space-y-3">
                 <FormField
                   control={form.control}
-                  name="whatsappEnabled"
+                  name="whatsapp_habilitado"
                   render={({ field }) => (
                     <FormItem className="flex items-center justify-between flex-row">
                       <div>
@@ -711,7 +727,7 @@ export function IntegrationsForm({ integrations, onChange, onSave }) {
                 />
                 <FormField
                   control={form.control}
-                  name="whatsappNumber"
+                  name="whatsapp_numero"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Número de WhatsApp</FormLabel>
@@ -727,7 +743,7 @@ export function IntegrationsForm({ integrations, onChange, onSave }) {
               <div className="p-4 border rounded-lg space-y-3">
                 <FormField
                   control={form.control}
-                  name="googleEnabled"
+                  name="google_habilitado"
                   render={({ field }) => (
                     <FormItem className="flex items-center justify-between flex-row">
                       <div>
@@ -742,7 +758,7 @@ export function IntegrationsForm({ integrations, onChange, onSave }) {
                 />
                 <FormField
                   control={form.control}
-                  name="googleAnalyticsId"
+                  name="google_analytics_id"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Measurement ID</FormLabel>
@@ -760,7 +776,7 @@ export function IntegrationsForm({ integrations, onChange, onSave }) {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <FormField
                     control={form.control}
-                    name="emailSmtpHost"
+                    name="smtp_host"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Host</FormLabel>
@@ -773,7 +789,7 @@ export function IntegrationsForm({ integrations, onChange, onSave }) {
                   />
                   <FormField
                     control={form.control}
-                    name="emailSmtpPort"
+                    name="smtp_port"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Puerto</FormLabel>
@@ -790,20 +806,19 @@ export function IntegrationsForm({ integrations, onChange, onSave }) {
                   />
                   <FormField
                     control={form.control}
-                    name="emailFrom"
+                    name="smtp_tls"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Remitente</FormLabel>
+                      <FormItem className="flex items-end justify-between pb-3 flex-row">
+                        <FormLabel className="mb-0">TLS / STARTTLS</FormLabel>
                         <FormControl>
-                          <Input {...field} value={field.value ?? ""} />
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
-                        <FormMessage />
                       </FormItem>
                     )}
                   />
                   <FormField
                     control={form.control}
-                    name="smtpUser"
+                    name="smtp_usuario"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Usuario SMTP</FormLabel>
@@ -816,7 +831,7 @@ export function IntegrationsForm({ integrations, onChange, onSave }) {
                   />
                   <FormField
                     control={form.control}
-                    name="smtpPass"
+                    name="smtp_password"
                     render={({ field }) => (
                       <FormItem className="md:col-span-2">
                         <FormLabel>Contraseña SMTP</FormLabel>

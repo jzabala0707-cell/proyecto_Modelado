@@ -1,35 +1,71 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { DEFAULT_PROFILE, DEFAULT_NOTIFICATIONS, DEFAULT_SECURITY, DEFAULT_PREFERENCES, DEFAULT_BILLING, DEFAULT_INTEGRATIONS, } from "../settingsServices";
+import {
+  loadAllSettings,
+  saveSettingsSection,
+} from "../settingsServices";
+
+const LABEL_TO_SECTION = {
+  Perfil: "profile",
+  Notificaciones: "notifications",
+  Seguridad: "security",
+  Preferencias: "preferences",
+  Facturación: "billing",
+  Integraciones: "integrations",
+};
+
 export function useSettingsPage() {
-    const [activeTab, setActiveTab] = useState("profile");
-    const [profile, setProfile] = useState(DEFAULT_PROFILE);
-    const [notifications, setNotifications] = useState(DEFAULT_NOTIFICATIONS);
-    const [security, setSecurity] = useState(DEFAULT_SECURITY);
-    const [preferences, setPreferences] = useState(DEFAULT_PREFERENCES);
-    const [billing, setBilling] = useState(DEFAULT_BILLING);
-    const [integrations, setIntegrations] = useState(DEFAULT_INTEGRATIONS);
-    const saveSection = (section) => {
-        toast.success(`Sección "${section}" guardada exitosamente`);
-        if (section === "Seguridad") {
-            setSecurity({ ...security, currentPassword: "", newPassword: "", confirmPassword: "" });
-        }
+  const initial = loadAllSettings();
+
+  const [activeTab, setActiveTab] = useState("profile");
+  const [profile, setProfile] = useState(initial.profile);
+  const [notifications, setNotifications] = useState(initial.notifications);
+  const [security, setSecurity] = useState(initial.security);
+  const [preferences, setPreferences] = useState(initial.preferences);
+  const [billing, setBilling] = useState(initial.billing);
+  const [integrations, setIntegrations] = useState(initial.integrations);
+
+  const saveSection = (sectionLabel) => {
+    const sectionKey = LABEL_TO_SECTION[sectionLabel] || sectionLabel?.toLowerCase();
+    const stateBySection = {
+      profile,
+      notifications,
+      security,
+      preferences,
+      billing,
+      integrations,
     };
-    return {
-        activeTab,
-        setActiveTab,
-        profile,
-        setProfile,
-        notifications,
-        setNotifications,
-        security,
-        setSecurity,
-        preferences,
-        setPreferences,
-        billing,
-        setBilling,
-        integrations,
-        setIntegrations,
-        saveSection,
-    };
+    const payload = stateBySection[sectionKey];
+    if (payload && sectionKey) {
+      saveSettingsSection(sectionKey, payload);
+    }
+    toast.success(`Sección "${sectionLabel}" guardada exitosamente`);
+    if (sectionKey === "security") {
+      setSecurity({
+        ...security,
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    }
+  };
+
+  return {
+    activeTab,
+    setActiveTab,
+    profile,
+    setProfile,
+    notifications,
+    setNotifications,
+    security,
+    setSecurity,
+    preferences,
+    setPreferences,
+    billing,
+    setBilling,
+    integrations,
+    setIntegrations,
+    saveSection,
+  };
 }
+

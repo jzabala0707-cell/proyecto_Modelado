@@ -1,27 +1,33 @@
 import { z } from "zod";
 import {
-  requiredDateSchema,
-  requiredSelectSchema,
+  requiredBigIntSchema,
+  precioSchema,
   nonNegativeNumberSchema,
-  positiveNumberSchema,
-  optionalString,
+  estadoVentaSchema,
+  optionalLongText,
+  requiredDateSchema,
 } from "@/shared/validations/sharedSchemas";
 
-export const saleSchema = z.object({
-  client: requiredSelectSchema("Seleccione un cliente."),
-  tour: requiredSelectSchema("Seleccione un tour."),
-  date: requiredDateSchema("La fecha es obligatoria."),
-  subtotal: nonNegativeNumberSchema("El subtotal es obligatorio."),
-  discount: nonNegativeNumberSchema("El descuento es obligatorio."),
-  status: requiredSelectSchema("Seleccione un estado."),
-  paymentMethod: requiredSelectSchema("Seleccione un método de pago."),
+export const ventaSchema = z.object({
+  id_reserva: requiredBigIntSchema("Seleccione la reserva asociada."),
+  fecha_venta: requiredDateSchema("Fecha de venta es obligatoria."),
+  subtotal: precioSchema("Subtotal es obligatorio."),
+  impuestos: nonNegativeNumberSchema("Impuestos obligatorios").default(0),
+  descuento: nonNegativeNumberSchema("Descuento obligatorio").default(0),
+  total: precioSchema("Total es obligatorio."),
+  estado: estadoVentaSchema,
+  observaciones: optionalLongText(),
 });
 
-export const paymentSchema = z.object({
-  saleId: requiredSelectSchema("Seleccione la factura asociada."),
-  date: requiredDateSchema("La fecha de pago es obligatoria."),
-  method: requiredSelectSchema("Seleccione un método."),
-  amount: positiveNumberSchema("El monto es obligatorio."),
-  status: requiredSelectSchema("Seleccione un estado."),
-  reference: optionalString(),
+export const abonoSchema = z.object({
+  id_venta: requiredBigIntSchema("Seleccione la venta."),
+  fecha_abono: requiredDateSchema("Fecha de abono es obligatoria."),
+  id_metodo_pago: requiredBigIntSchema("Seleccione método de pago."),
+  monto: precioSchema("Monto del abono es obligatorio."),
+  referencia: optionalLongText(100),
+  comprobante_url: optionalLongText(500),
+  observaciones: optionalLongText(),
 });
+
+export const saleSchema = ventaSchema;
+export const paymentSchema = abonoSchema;

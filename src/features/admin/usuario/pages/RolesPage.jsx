@@ -6,12 +6,18 @@ import { Card, CardContent } from "@/shared/components/ui/card";
 import { SearchToolbar } from "@/features/admin/components/SearchToolbar";
 import { TablePagination } from "@/features/admin/components/TablePagination";
 import { StatsGrid } from "@/features/admin/components/StatCard";
-import { USER_STATUS_OPTIONS } from "../userServices";
 import { useRolesPage } from "../hooks/useUsersPage";
 import { RolesTableFull } from "../components/RolesTableFull";
 import { RoleCreateDialog } from "../components/RoleCreateDialog";
 import { RoleDetailDialog } from "../components/RoleDetailDialog";
 import { RoleDeleteDialog } from "../components/RoleDeleteDialog";
+
+const ROLE_STATUS_OPTIONS = [
+    { value: "all", label: "Todos" },
+    { value: "active", label: "Activos" },
+    { value: "inactive", label: "Inactivos" },
+];
+
 export function RolesPage() {
     const state = useRolesPage();
     const stats = [
@@ -28,7 +34,7 @@ export function RolesPage() {
 
         <StatsGrid stats={stats} columns={3}/>
 
-        <SearchToolbar searchTerm={state.search.searchTerm} onSearchChange={state.search.setSearchTerm} searchPlaceholder="Buscar rol por nombre o descripción..." statusFilter={state.filters.status} onStatusFilterChange={(value) => state.setFilters({ ...state.filters, status: value })} statusOptions={USER_STATUS_OPTIONS} hasActiveFilters={state.hasActiveFilters} onToggleFilters={state.dialogs.toggleFilters} onExport={state.handleExportCSV}/>
+        <SearchToolbar searchTerm={state.search.searchTerm} onSearchChange={state.search.setSearchTerm} searchPlaceholder="Buscar rol por nombre o descripción..." statusFilter={state.filters.activo === "all" ? "all" : state.filters.activo} onStatusFilterChange={(value) => state.setFilters({ ...state.filters, activo: value })} statusOptions={ROLE_STATUS_OPTIONS} hasActiveFilters={state.hasActiveFilters} onToggleFilters={state.dialogs.toggleFilters} onExport={state.handleExportCSV}/>
 
         {state.dialogs.isFilterOpen && (
           <Card>
@@ -41,7 +47,7 @@ export function RolesPage() {
               </div>
               <div className="mt-3 text-sm text-muted-foreground">
                 Actualmente mostrando: <strong>{state.pagination.totalItems} roles</strong>
-                {" • "}Estado: <strong>{state.filters.status === "all" ? "Todos" : state.filters.status}</strong>
+                {" • "}Estado: <strong>{state.filters.activo === "all" ? "Todos" : state.filters.activo === "active" ? "Activos" : "Inactivos"}</strong>
               </div>
             </CardContent>
           </Card>
@@ -57,7 +63,7 @@ export function RolesPage() {
 
       <RoleCreateDialog open={state.dialogs.isCreateOpen} onOpenChange={state.dialogs.setIsCreateOpen} formData={state.formData} setFormData={state.setFormData} onTogglePermission={state.togglePermission} onSubmit={state.handleCreate}/>
 
-      <RoleCreateDialog open={state.dialogs.isEditOpen} onOpenChange={state.dialogs.setIsEditOpen} formData={state.formData} setFormData={state.setFormData} onTogglePermission={state.togglePermission} onSubmit={state.handleEdit}/>
+      <RoleCreateDialog open={state.dialogs.isEditOpen} onOpenChange={state.dialogs.setIsEditOpen} formData={state.formData} setFormData={state.setFormData} onTogglePermission={state.togglePermission} onSubmit={state.handleEdit} isEdit/>
 
       <RoleDetailDialog open={state.dialogs.isDetailOpen} onOpenChange={state.dialogs.setIsDetailOpen} role={state.dialogs.selectedItem}/>
 

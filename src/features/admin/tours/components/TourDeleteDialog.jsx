@@ -10,14 +10,24 @@ import {
 } from "@/shared/components/ui/alert-dialog";
 
 export function TourDeleteDialog({ open, onOpenChange, tour, onConfirm }) {
+    const nombre = tour?.nombre ?? tour?.name ?? "";
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>¿Estás seguro de eliminar este tour?</AlertDialogTitle>
+                    <AlertDialogTitle>
+                        ¿Estás seguro de eliminar este tour?
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                        Esta acción no se puede deshacer. Se eliminará permanentemente el tour{" "}
-                        <strong>{tour?.name}</strong>.
+                        Esta acción no se puede deshacer. Se eliminará permanentemente el tour
+                        {nombre ? (
+                            <>
+                                {" "}
+                                <strong>{nombre}</strong>
+                            </>
+                        ) : (
+                            "."
+                        )}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

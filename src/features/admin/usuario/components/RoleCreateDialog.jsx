@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, } from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Button } from "@/shared/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
+import { Switch } from "@/shared/components/ui/switch";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, } from "@/shared/components/ui/form";
 import { PermissionsGrid } from "./RolesList";
 import { roleSchema } from "../validations/userValidation";
@@ -22,8 +22,14 @@ export function RoleCreateDialog({ open, onOpenChange, formData, setFormData, on
         }
     }, [open, formData, form]);
 
-    const handleSubmit = form.handleSubmit((datos) => {
-        onSubmit(datos);
+    const handleSubmit = form.handleSubmit((data) => {
+        const payload = {
+            nombre: data.nombre,
+            descripcion: data.descripcion,
+            activo: data.activo,
+            permisos_ids: data.permisosIds,
+        };
+        onSubmit(payload);
     });
 
     return (<Dialog open={open} onOpenChange={onOpenChange}>
@@ -37,16 +43,58 @@ export function RoleCreateDialog({ open, onOpenChange, formData, setFormData, on
         <Form {...form}>
           <form onSubmit={handleSubmit} className="space-y-0">
             <div className="grid grid-cols-1 gap-4 py-2">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="nombre"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nombre del Rol</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Ej: Supervisor" onChange={(e) => {
+                          field.onChange(e);
+                          setFormData({ ...formData, nombre: e.target.value });
+                        }}/>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="activo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estado</FormLabel>
+                      <FormControl>
+                        <div className="flex items-center gap-3 h-10 px-3 border rounded-md bg-muted/20">
+                          <Switch
+                            checked={field.value ?? true}
+                            onCheckedChange={(checked) => {
+                              field.onChange(checked);
+                              setFormData({ ...formData, activo: checked });
+                            }}
+                          />
+                          <span className="text-sm">
+                            {(field.value ?? true) ? "Rol Activo" : "Rol Inactivo"}
+                          </span>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               <FormField
                 control={form.control}
-                name="name"
+                name="descripcion"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nombre del Rol</FormLabel>
+                    <FormLabel>Descripción (opcional)</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Ej: Supervisor" onChange={(e) => {
+                      <Input {...field} value={field.value ?? ""} placeholder="Descripción del rol" onChange={(e) => {
                         field.onChange(e);
-                        setFormData({ ...formData, name: e.target.value });
+                        setFormData({ ...formData, descripcion: e.target.value });
                       }}/>
                     </FormControl>
                     <FormMessage />
@@ -55,57 +103,20 @@ export function RoleCreateDialog({ open, onOpenChange, formData, setFormData, on
               />
               <FormField
                 control={form.control}
-                name="description"
+                name="permisosIds"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Descripción</FormLabel>
+                    <FormLabel>Permisos ({(field.value || []).length} seleccionados)</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Descripción del rol" onChange={(e) => {
-                        field.onChange(e);
-                        setFormData({ ...formData, description: e.target.value });
-                      }}/>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estado</FormLabel>
-                    <Select onValueChange={(value) => {
-                      field.onChange(value);
-                      setFormData({ ...formData, status: value });
-                    }} value={field.value ?? "active"}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Activo</SelectItem>
-                        <SelectItem value="inactive">Inactivo</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="permissions"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Permisos ({formData.permissions.length} seleccionados)</FormLabel>
-                    <FormControl>
-                      <PermissionsGrid 
-                        selected={field.value} 
-                        onToggle={(perm) => {
-                          onTogglePermission(perm);
-                          const newPermissions = field.value.includes(perm)
-                            ? field.value.filter(p => p !== perm)
-                            : [...field.value, perm];
-                          field.onChange(newPermissions);
+                      <PermissionsGrid
+                        selected={field.value || []}
+                        onToggle={(permId) => {
+                          onTogglePermission(permId);
+                          const currentIds = field.value || [];
+                          const newIds = currentIds.includes(permId)
+                            ? currentIds.filter((id) => id !== permId)
+                            : [...currentIds, permId];
+                          field.onChange(newIds);
                         }}
                       />
                     </FormControl>
@@ -118,7 +129,7 @@ export function RoleCreateDialog({ open, onOpenChange, formData, setFormData, on
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
               </Button>
-              <Button type="submit">Crear Rol</Button>
+              <Button type="submit">{isEdit ? "Guardar Cambios" : "Crear Rol"}</Button>
             </DialogFooter>
           </form>
         </Form>

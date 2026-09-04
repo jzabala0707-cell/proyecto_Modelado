@@ -34,7 +34,7 @@ export function LoginPage() {
   const handleLogin = (data) => {
     void runWithLoading(() =>
       authServices.login({
-        email: data.email,
+        correo: data.email.toLowerCase(),
         password: data.password,
       })
     );

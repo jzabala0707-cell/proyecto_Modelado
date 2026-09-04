@@ -18,6 +18,7 @@ import {
     FormMessage,
 } from "@/shared/components/ui/form";
 import { Input } from "@/shared/components/ui/input";
+import { Textarea } from "@/shared/components/ui/textarea";
 import {
     Select,
     SelectContent,
@@ -28,25 +29,27 @@ import {
 import { Button } from "@/shared/components/ui/button";
 import { Badge } from "@/shared/components/ui/badge";
 import { toast } from "sonner";
-import { PAYMENT_METHOD_OPTIONS, mockSales } from "../paymentServices";
-import { paymentSchema } from "../validations/salesValidation";
+import {
+    mockVentas,
+    metodosPagoCatalogo,
+    abonoServices,
+    mockReservasParaVentas,
+} from "../paymentServices";
+import { abonoSchema } from "../validations/salesValidation";
 
-const STATUS_OPTIONS = [
-    { value: "pending", label: "Pendiente" },
-    { value: "completed", label: "Completado" },
-    { value: "partial", label: "Parcial" },
-];
-const PAYMENT_METHOD_ID_MAP = {
-    "Tarjeta": 1,
-    "Efectivo": 2,
-    "Transferencia": 3,
-};
-const SALE_INVOICE_OPTIONS = Array.isArray(mockSales)
-    ? mockSales.map((s) => ({
-        value: String(s.id),
-        label: `${s.invoice} · ${s.client} - $${(s.total ?? 0).toLocaleString()}`,
-    }))
-    : [];
+const METODO_PAGO_SELECT = metodosPagoCatalogo.map((m) => ({
+    value: String(m.id_metodo_pago),
+    label: m.nombre,
+}));
+
+const VENTA_SELECT = mockVentas.map((v) => {
+    const reserva = mockReservasParaVentas.find((r) => r.id_reserva === v.id_reserva) ?? null;
+    return {
+        value: String(v.id_venta),
+        label: `${v.numero_venta} · ${reserva?.cliente_nombre ?? "S/N"} · $${(v.total ?? 0).toLocaleString()}`,
+        total: v.total ?? 0,
+    };
+});
 
 export function PaymentCreateEditDialog({
     open,
@@ -56,17 +59,18 @@ export function PaymentCreateEditDialog({
     onSubmit,
     isEdit = false,
 }) {
-    const hasContextoSaleId = !!formData.saleId;
+    const hasContextoSaleId = !!formData.id_venta;
 
     const form = useForm({
-        resolver: zodResolver(paymentSchema),
+        resolver: zodResolver(abonoSchema),
         defaultValues: {
-            saleId: formData.saleId ? String(formData.saleId) : "",
-            date: formData.date,
-            method: formData.method,
-            amount: formData.amount,
-            status: formData.status,
-            reference: formData.reference,
+            id_venta: formData.id_venta ?? null,
+            fecha_abono: formData.fecha_abono,
+            id_metodo_pago: formData.id_metodo_pago,
+            monto: formData.monto,
+            referencia: formData.referencia,
+            comprobante_url: formData.comprobante_url,
+            observaciones: formData.observaciones,
         },
         mode: "onTouched",
     });
@@ -74,42 +78,38 @@ export function PaymentCreateEditDialog({
     useEffect(() => {
         if (open) {
             form.reset({
-                saleId: formData.saleId ? String(formData.saleId) : "",
-                date: formData.date ?? "",
-                method: formData.method ?? "",
-                amount: formData.amount ?? 0,
-                status: formData.status ?? "",
-                reference: formData.reference ?? "",
+                id_venta: formData.id_venta ?? null,
+                fecha_abono: formData.fecha_abono ?? new Date().toISOString().split("T")[0],
+                id_metodo_pago: formData.id_metodo_pago ?? null,
+                monto: formData.monto ?? 0,
+                referencia: formData.referencia ?? "",
+                comprobante_url: formData.comprobante_url ?? "",
+                observaciones: formData.observaciones ?? "",
             });
         }
     }, [open, formData, form]);
 
-    const methodOptions = PAYMENT_METHOD_OPTIONS.filter((o) => o.value !== "all");
-    const saleIdSeleccionado = form.watch("saleId");
-    const amountIngresado = form.watch("amount");
+    const idVentaSeleccionada = form.watch("id_venta");
+    const montoIngresado = form.watch("monto");
 
-    const { saldoPendiente, facturaSeleccionada } = useMemo(() => {
-        if (!saleIdSeleccionado) return { saldoPendiente: null, facturaSeleccionada: null };
-        const idNum = Number(saleIdSeleccionado);
-        const sale = Array.isArray(mockSales)
-            ? mockSales.find((s) => s.id === idNum)
-            : null;
-        if (!sale) return { saldoPendiente: null, facturaSeleccionada: null };
-        const pagado = (sale.payments ?? [])
-            .filter((p) => p.status === "completed")
-            .reduce((s, p) => s + Number(p.amount ?? 0), 0);
-        const saldo = Math.max(0, Number(sale.total ?? 0) - pagado);
-        return { saldoPendiente: saldo, facturaSeleccionada: sale };
-    }, [saleIdSeleccionado]);
+    const { saldoPendiente, ventaSeleccionada, sumaAbonos } = useMemo(() => {
+        if (!idVentaSeleccionada) return { saldoPendiente: null, ventaSeleccionada: null, sumaAbonos: 0 };
+        const idNum = Number(idVentaSeleccionada);
+        const venta = mockVentas.find((v) => v.id_venta === idNum) ?? null;
+        if (!venta) return { saldoPendiente: null, ventaSeleccionada: null, sumaAbonos: 0 };
+        const suma = abonoServices.getSumaAbonos(idNum);
+        const montoActual = isEdit && formData.monto ? Number(formData.monto) : 0;
+        const sumaSinActual = isEdit ? suma - montoActual : suma;
+        const saldo = Math.max(0, Number(venta.total ?? 0) - sumaSinActual);
+        return { saldoPendiente: saldo, ventaSeleccionada: venta, sumaAbonos: suma };
+    }, [idVentaSeleccionada, isEdit, formData.monto]);
 
     const handleInternalSubmit = (validatedData) => {
-        const saleIdNum = Number(validatedData.saleId);
-        const paymentMethodId = PAYMENT_METHOD_ID_MAP[validatedData.method] ?? null;
-        const amount = Number(validatedData.amount ?? 0);
+        const monto = Number(validatedData.monto ?? 0);
 
-        if (saldoPendiente !== null && amount > saldoPendiente) {
-            toast.error(`El monto $${amount.toLocaleString()} supera el saldo pendiente de $${saldoPendiente.toLocaleString()}.`);
-            form.setError("amount", {
+        if (saldoPendiente !== null && monto > saldoPendiente) {
+            toast.error(`El monto $${monto.toLocaleString()} supera el saldo pendiente de $${saldoPendiente.toLocaleString()}.`);
+            form.setError("monto", {
                 type: "manual",
                 message: `Supera el saldo pendiente ($${saldoPendiente.toLocaleString()})`,
             });
@@ -118,17 +118,20 @@ export function PaymentCreateEditDialog({
 
         const payload = {
             ...validatedData,
-            saleId: Number.isNaN(saleIdNum) ? null : saleIdNum,
-            paymentMethodId,
-            amount,
+            id_venta: Number(validatedData.id_venta),
+            id_metodo_pago: Number(validatedData.id_metodo_pago),
+            monto,
         };
+        if (isEdit && formData.id_abono) {
+            payload.id_abono = formData.id_abono;
+        }
         setFormData({ ...formData, ...payload });
         onSubmit(payload);
     };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[520px]">
+            <DialogContent className="sm:max-w-[560px] max-h-[85vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>
                         {isEdit ? "Editar Abono" : "Crear Nuevo Abono"}
@@ -136,7 +139,7 @@ export function PaymentCreateEditDialog({
                     <DialogDescription>
                         {isEdit
                             ? "Actualiza la información del abono"
-                            : "Ingresa los datos del nuevo abono"}
+                            : "Ingresa los datos del nuevo abono. Los métodos de pago provienen del catálogo."}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -144,41 +147,42 @@ export function PaymentCreateEditDialog({
                         <div className="grid grid-cols-2 gap-4 py-4">
                             <FormField
                                 control={form.control}
-                                name="saleId"
+                                name="id_venta"
                                 render={({ field }) => (
                                     <FormItem className="col-span-2">
-                                        <FormLabel>Factura</FormLabel>
+                                        <FormLabel>Venta Asociada *</FormLabel>
                                         <Select
-                                            onValueChange={field.onChange}
-                                            defaultValue={field.value}
-                                            value={field.value}
+                                            onValueChange={(v) => field.onChange(Number(v))}
+                                            defaultValue={field.value ? String(field.value) : undefined}
+                                            value={field.value ? String(field.value) : undefined}
                                             disabled={hasContextoSaleId}
                                         >
                                             <FormControl>
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccione la factura" />
+                                                    <SelectValue placeholder="Seleccione la venta" />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {SALE_INVOICE_OPTIONS.map((opt) => (
+                                                {VENTA_SELECT.map((opt) => (
                                                     <SelectItem key={opt.value} value={opt.value}>
                                                         {opt.label}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        {hasContextoSaleId && facturaSeleccionada && (
+                                        {hasContextoSaleId && ventaSeleccionada && (
                                             <p className="text-xs text-muted-foreground">
-                                                Factura asociada desde la vista de ventas: {facturaSeleccionada.invoice}
+                                                Venta asociada desde la vista: {ventaSeleccionada.numero_venta}
                                             </p>
                                         )}
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
+
                             {saldoPendiente !== null && (
                                 <div className="col-span-2 space-y-2">
-                                    <FormLabel>Saldo pendiente de la factura</FormLabel>
+                                    <FormLabel>Saldo pendiente de la venta</FormLabel>
                                     <Badge
                                         variant="outline"
                                         className={`text-sm py-2 px-3 font-mono w-full justify-start ${saldoPendiente > 0
@@ -187,47 +191,50 @@ export function PaymentCreateEditDialog({
                                     >
                                         ${saldoPendiente.toLocaleString()}
                                     </Badge>
+                                    <p className="text-xs text-muted-foreground">
+                                        Total venta: ${(ventaSeleccionada?.total ?? 0).toLocaleString()}
+                                        {" · "}Abonado (otros): ${(sumaAbonos - (isEdit ? Number(formData.monto ?? 0) : 0)).toLocaleString()}
+                                    </p>
                                     {saldoPendiente === 0 && (
                                         <p className="text-xs text-success">
-                                            Factura se encuentra pagada en su totalidad.
+                                            Venta se encuentra pagada en su totalidad.
                                         </p>
                                     )}
                                 </div>
                             )}
+
                             <FormField
                                 control={form.control}
-                                name="date"
+                                name="fecha_abono"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Fecha de Pago</FormLabel>
+                                        <FormLabel>Fecha de Abono *</FormLabel>
                                         <FormControl>
-                                            <Input
-                                                type="date"
-                                                {...field}
-                                            />
+                                            <Input type="date" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
+
                             <FormField
                                 control={form.control}
-                                name="method"
+                                name="id_metodo_pago"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Método</FormLabel>
+                                        <FormLabel>Método de Pago *</FormLabel>
                                         <Select
-                                            onValueChange={field.onChange}
-                                            defaultValue={field.value}
-                                            value={field.value}
+                                            onValueChange={(v) => field.onChange(Number(v))}
+                                            defaultValue={field.value ? String(field.value) : undefined}
+                                            value={field.value ? String(field.value) : undefined}
                                         >
                                             <FormControl>
                                                 <SelectTrigger>
-                                                    <SelectValue />
+                                                    <SelectValue placeholder="Seleccione método" />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {methodOptions.map((opt) => (
+                                                {METODO_PAGO_SELECT.map((opt) => (
                                                     <SelectItem key={opt.value} value={opt.value}>
                                                         {opt.label}
                                                     </SelectItem>
@@ -238,12 +245,13 @@ export function PaymentCreateEditDialog({
                                     </FormItem>
                                 )}
                             />
+
                             <FormField
                                 control={form.control}
-                                name="amount"
+                                name="monto"
                                 render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Monto</FormLabel>
+                                    <FormItem className="col-span-2">
+                                        <FormLabel>Monto ($) *</FormLabel>
                                         <FormControl>
                                             <Input
                                                 type="number"
@@ -252,46 +260,19 @@ export function PaymentCreateEditDialog({
                                                 placeholder="0"
                                             />
                                         </FormControl>
-                                        {saldoPendiente !== null && amountIngresado > saldoPendiente && (
+                                        {saldoPendiente !== null && montoIngresado > saldoPendiente && (
                                             <p className="text-xs text-destructive">
-                                                ⚠ Supera saldo pendiente
+                                                ⚠ Supera saldo pendiente ($${saldoPendiente.toLocaleString()})
                                             </p>
                                         )}
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
+
                             <FormField
                                 control={form.control}
-                                name="status"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Estado</FormLabel>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            defaultValue={field.value}
-                                            value={field.value}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {STATUS_OPTIONS.map((opt) => (
-                                                    <SelectItem key={opt.value} value={opt.value}>
-                                                        {opt.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="reference"
+                                name="referencia"
                                 render={({ field }) => (
                                     <FormItem className="col-span-2">
                                         <FormLabel>Referencia</FormLabel>
@@ -300,6 +281,43 @@ export function PaymentCreateEditDialog({
                                                 {...field}
                                                 value={field.value ?? ""}
                                                 placeholder="TXN-0001, NEQUI-001, Pago en hotel, etc."
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="comprobante_url"
+                                render={({ field }) => (
+                                    <FormItem className="col-span-2">
+                                        <FormLabel>Comprobante (URL)</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                value={field.value ?? ""}
+                                                placeholder="https://..."
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="observaciones"
+                                render={({ field }) => (
+                                    <FormItem className="col-span-2">
+                                        <FormLabel>Observaciones</FormLabel>
+                                        <FormControl>
+                                            <Textarea
+                                                {...field}
+                                                value={field.value ?? ""}
+                                                placeholder="Notas sobre el abono..."
+                                                rows={3}
                                             />
                                         </FormControl>
                                         <FormMessage />

@@ -15,31 +15,35 @@ export function UsersTable({ items, onDetail, onEdit, onDelete, onToggleStatus, 
       <TableHeader>
         <TableRow>
           <TableHead>ID</TableHead>
-          <SortableHeader field="name">Nombre</SortableHeader>
-          <SortableHeader field="email">Email</SortableHeader>
+          <SortableHeader field="nombre">Nombre</SortableHeader>
+          <SortableHeader field="correo">Email</SortableHeader>
           <TableHead>Teléfono</TableHead>
-          <SortableHeader field="role">Rol</SortableHeader>
-          <SortableHeader field="status">Estado</SortableHeader>
-          <SortableHeader field="createdAt">Creación</SortableHeader>
+          <SortableHeader field="roles">Rol(es)</SortableHeader>
+          <SortableHeader field="estado">Estado</SortableHeader>
+          <SortableHeader field="creado_en">Creación</SortableHeader>
           <TableHead>Acciones</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {items.length === 0 ? (<EmptyState message="No se encontraron usuarios" colSpan={8}/>) : (items.map((user) => (<TableRow key={user.id}>
+        {items.length === 0 ? (<EmptyState message="No se encontraron usuarios" colSpan={8}/>) : (items.map((user) => {
+            const fullName = userServices.getFullName(user);
+            const initials = userServices.getInitials(user.nombre ?? user.firstName, user.apellido ?? user.lastName);
+            const rolesLabel = userServices.getRolesLabel(user);
+            return (<TableRow key={user.id}>
               <TableCell>{user.id}</TableCell>
               <TableCell>
-                <div className="font-medium">{user.name}</div>
+                <div className="font-medium">{fullName}</div>
                 <div className="text-xs text-muted-foreground">
-                  {userServices.getInitials(user.name)}
+                  {initials}
                 </div>
               </TableCell>
-              <TableCell>{user.email}</TableCell>
-              <TableCell>{user.phone}</TableCell>
-              <TableCell>{user.role}</TableCell>
+              <TableCell>{user.correo ?? user.email}</TableCell>
+              <TableCell>{user.telefono ?? user.phone}</TableCell>
+              <TableCell>{rolesLabel}</TableCell>
               <TableCell>
-                <StatusBadge status={user.status} map={userStatusMap}/>
+                <StatusBadge status={user.estado ?? user.status} map={userStatusMap}/>
               </TableCell>
-              <TableCell>{user.createdAt}</TableCell>
+              <TableCell>{user.creado_en ?? user.createdAt}</TableCell>
               <TableCell>
                 <div className="flex gap-2">
                   <Button variant="ghost" size="sm" onClick={() => onDetail(user)} style={{ color: "#ff9500" }}>
@@ -48,7 +52,7 @@ export function UsersTable({ items, onDetail, onEdit, onDelete, onToggleStatus, 
                   <Button variant="ghost" size="sm" onClick={() => onEdit(user)} style={{ color: "#0d47a1" }}>
                     <Pencil className="h-4 w-4"/>
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => onToggleStatus(user)} style={{ color: "#1b5e20" }}>
+                  <Button variant="ghost" size="sm" onClick={() => onToggleStatus(user)} style={{ color: "#1b5e20" }} title={(user.estado ?? user.status) === "ACTIVO" ? "Desactivar" : "Activar"}>
                     <Power className="h-4 w-4"/>
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => onDelete(user)} style={{ color: "#c62828" }} title="Eliminar">
@@ -56,7 +60,8 @@ export function UsersTable({ items, onDetail, onEdit, onDelete, onToggleStatus, 
                   </Button>
                 </div>
               </TableCell>
-            </TableRow>)))}
+            </TableRow>);
+        }))}
       </TableBody>
     </Table>);
 }

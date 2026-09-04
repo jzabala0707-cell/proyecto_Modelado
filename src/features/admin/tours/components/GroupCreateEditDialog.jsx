@@ -19,6 +19,7 @@ import {
 } from "@/shared/components/ui/form";
 import { Input } from "@/shared/components/ui/input";
 import { Textarea } from "@/shared/components/ui/textarea";
+import { Badge } from "@/shared/components/ui/badge";
 import {
     Select,
     SelectContent,
@@ -27,18 +28,24 @@ import {
     SelectValue,
 } from "@/shared/components/ui/select";
 import { Button } from "@/shared/components/ui/button";
-import { GROUP_STATUS_OPTIONS, GUIDE_NAME_OPTIONS, mockTours } from "../tourServices";
+import { mockTours } from "../tourServices";
 import { mockGuides } from "@/features/admin/guias/guideServices";
-import { groupSchema } from "../validations/tourValidation";
+import { salidaSchema } from "../validations/tourValidation";
+import { ESTADO_SALIDA_OPTIONS } from "@/shared/constants/dbEnums";
 
-const TOUR_NAME_OPTIONS = mockTours.map((t) => ({
-    value: t.id,
-    label: t.name,
-}));
+const TOUR_OPTIONS = Array.isArray(mockTours)
+    ? mockTours.map((t) => ({
+          value: String(t.id_tour ?? t.id),
+          label: t.nombre ?? t.name,
+      }))
+    : [];
 
-const GUIDE_ID_OPTIONS = Array.isArray(mockGuides)
-    ? mockGuides.map((g) => ({ value: g.id, label: g.name }))
-    : GUIDE_NAME_OPTIONS.map((g) => g);
+const GUIA_OPTIONS = Array.isArray(mockGuides)
+    ? mockGuides.map((g) => ({
+          value: String(g.id_guia ?? g.id),
+          label: g.nombre ?? g.name,
+      }))
+    : [];
 
 export function GroupCreateEditDialog({
     open,
@@ -50,7 +57,7 @@ export function GroupCreateEditDialog({
 }) {
     const form = useForm({
         defaultValues: { ...formData },
-        resolver: zodResolver(groupSchema),
+        resolver: zodResolver(salidaSchema),
         mode: "onChange",
     });
 
@@ -60,13 +67,22 @@ export function GroupCreateEditDialog({
         }
     }, [open, formData, form]);
 
+    const cupoMaximo = form.watch("cupo_maximo");
+    const cuposDisponibles = cupoMaximo ? Number(cupoMaximo) : 0;
+
     const handleValidSubmit = (validData) => {
-        const tourId = Number(validData.tourName);
-        const guideId = Number(validData.guideName);
+        const id_tour = validData.id_tour ? Number(validData.id_tour) : null;
+        const id_guia = validData.id_guia ? Number(validData.id_guia) : null;
         const payload = {
             ...validData,
-            tourId: Number.isNaN(tourId) ? validData.tourName : tourId,
-            guideId: Number.isNaN(guideId) ? validData.guideName : guideId,
+            id_tour,
+            id_guia,
+            cupo_maximo: validData.cupo_maximo
+                ? Number(validData.cupo_maximo)
+                : null,
+            cupos_disponibles: validData.cupo_maximo
+                ? Number(validData.cupo_maximo)
+                : null,
         };
         setFormData(payload);
         onSubmit(payload);
@@ -76,11 +92,11 @@ export function GroupCreateEditDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[640px] max-h-[85vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>{isEdit ? "Editar Grupo" : "Crear Nuevo Grupo"}</DialogTitle>
+                    <DialogTitle>{isEdit ? "Editar Salida" : "Crear Nueva Salida"}</DialogTitle>
                     <DialogDescription>
                         {isEdit
-                            ? "Actualiza la información del grupo"
-                            : "Ingresa los datos del nuevo grupo"}
+                            ? "Actualiza la información de la salida del tour"
+                            : "Ingresa los datos de la nueva salida"}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -88,10 +104,10 @@ export function GroupCreateEditDialog({
                         <div className="grid grid-cols-2 gap-4 py-4">
                             <FormField
                                 control={form.control}
-                                name="tourName"
+                                name="id_tour"
                                 render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Tour (FK tour_id)</FormLabel>
+                                    <FormItem className="col-span-2">
+                                        <FormLabel>Tour</FormLabel>
                                         <Select
                                             onValueChange={(v) => field.onChange(Number(v))}
                                             value={field.value != null ? String(field.value) : undefined}
@@ -102,132 +118,7 @@ export function GroupCreateEditDialog({
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {TOUR_NAME_OPTIONS.map((opt) => (
-                                                    <SelectItem key={opt.value} value={String(opt.value)}>
-                                                        {opt.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="groupName"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Nombre del Grupo</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                placeholder="Comuna 13 - Grupo 01"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="guideName"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Guía (FK guide_id)</FormLabel>
-                                        <Select
-                                            onValueChange={(v) => field.onChange(Number(v))}
-                                            value={field.value != null ? String(field.value) : undefined}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccionar guía" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {GUIDE_ID_OPTIONS.map((opt) => (
-                                                    <SelectItem key={opt.value} value={String(opt.value)}>
-                                                        {opt.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="date"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Fecha</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="date"
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="startTime"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Hora Inicio</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="time"
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="maxCapacity"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Capacidad Máxima</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="number"
-                                                min={1}
-                                                value={field.value ?? ""}
-                                                onChange={(e) =>
-                                                    field.onChange(
-                                                        e.target.value === "" ? "" : Number(e.target.value)
-                                                    )
-                                                }
-                                                placeholder="12"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="status"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Estado</FormLabel>
-                                        <Select
-                                            onValueChange={field.onChange}
-                                            value={field.value}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {GROUP_STATUS_OPTIONS.filter((o) => o.value !== "all").map((opt) => (
+                                                {TOUR_OPTIONS.map((opt) => (
                                                     <SelectItem key={opt.value} value={opt.value}>
                                                         {opt.label}
                                                     </SelectItem>
@@ -240,14 +131,47 @@ export function GroupCreateEditDialog({
                             />
                             <FormField
                                 control={form.control}
-                                name="meetingPoint"
+                                name="id_guia"
                                 render={({ field }) => (
                                     <FormItem className="col-span-2">
-                                        <FormLabel>Punto de Encuentro</FormLabel>
+                                        <FormLabel>Guía (opcional)</FormLabel>
+                                        <Select
+                                            onValueChange={(v) =>
+                                                field.onChange(v ? Number(v) : null)
+                                            }
+                                            value={
+                                                field.value != null
+                                                    ? String(field.value)
+                                                    : undefined
+                                            }
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccionar guía (opcional)" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {GUIA_OPTIONS.map((opt) => (
+                                                    <SelectItem key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="fecha_salida"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Fecha de Salida</FormLabel>
                                         <FormControl>
                                             <Input
+                                                type="date"
                                                 {...field}
-                                                placeholder="Estación San Javier (Metro)"
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -256,14 +180,105 @@ export function GroupCreateEditDialog({
                             />
                             <FormField
                                 control={form.control}
-                                name="notes"
+                                name="cupo_maximo"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Cupo Máximo</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                min={1}
+                                                value={field.value ?? ""}
+                                                onChange={(e) =>
+                                                    field.onChange(
+                                                        e.target.value === ""
+                                                            ? ""
+                                                            : Number(e.target.value)
+                                                    )
+                                                }
+                                                placeholder="12"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="hora_salida"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Hora de Salida</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="time"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="hora_finalizacion"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Hora de Finalización (opcional)</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="time"
+                                                value={field.value ?? ""}
+                                                onChange={(e) => field.onChange(e.target.value)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="estado"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Estado</FormLabel>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            value={field.value}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccionar estado" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {ESTADO_SALIDA_OPTIONS.map((opt) => (
+                                                    <SelectItem key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <div className="space-y-2">
+                                <FormLabel>Cupos Disponibles (inicial)</FormLabel>
+                                <Badge variant="outline" className="h-9 px-3 w-full justify-center text-sm font-medium inline-flex">
+                                    {cuposDisponibles} cupos
+                                </Badge>
+                            </div>
+                            <FormField
+                                control={form.control}
+                                name="observaciones"
                                 render={({ field }) => (
                                     <FormItem className="col-span-2">
-                                        <FormLabel>Notas</FormLabel>
+                                        <FormLabel>Observaciones</FormLabel>
                                         <FormControl>
                                             <Textarea
                                                 {...field}
-                                                placeholder="Notas adicionales sobre el grupo..."
+                                                placeholder="Observaciones adicionales sobre la salida..."
                                                 rows={3}
                                             />
                                         </FormControl>
@@ -277,7 +292,7 @@ export function GroupCreateEditDialog({
                                 Cancelar
                             </Button>
                             <Button type="submit">
-                                {isEdit ? "Guardar Cambios" : "Crear Grupo"}
+                                {isEdit ? "Guardar Cambios" : "Crear Salida"}
                             </Button>
                         </DialogFooter>
                     </form>

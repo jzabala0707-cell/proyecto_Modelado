@@ -7,12 +7,12 @@ import { Avatar, AvatarFallback } from "@/shared/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, } from "@/shared/components/ui/dialog";
 import { Label } from "@/shared/components/ui/label";
 import { Input } from "@/shared/components/ui/input";
-import { clientServices } from "@/features/admin/reservas/bookingServices";
-export function ClientsStats({ total, vip, active, totalRevenue }) {
+import { clientServices } from "@/features/admin/clientes/clientServices";
+export function ClientsStats({ total, vip, activos, totalRevenue }) {
     return (<StatsGrid stats={[
             { title: "Total Clientes", value: total, icon: Users, color: "text-primary" },
             { title: "Clientes VIP", value: vip, icon: Crown, color: "text-warning" },
-            { title: "Clientes Activos", value: active, icon: UserCheck, color: "text-success" },
+            { title: "Clientes Activos", value: activos, icon: UserCheck, color: "text-success" },
             { title: "Ingresos Totales", value: totalRevenue, icon: DollarSign, color: "text-secondary" },
         ]} columns={4}/>);
 }

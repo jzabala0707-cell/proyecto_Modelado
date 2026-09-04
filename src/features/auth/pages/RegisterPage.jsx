@@ -17,6 +17,17 @@ import {
   FormMessage,
 } from "@/shared/components/ui/form";
 import { Input } from "@/shared/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/components/ui/select";
+import {
+  TIPO_DOCUMENTO_OPTIONS,
+  GENERO_OPTIONS,
+} from "@/shared/constants/dbEnums";
 
 function PasswordHint({ ok, children }) {
   return (
@@ -42,6 +53,11 @@ export function RegisterPage() {
       lastName: "",
       email: "",
       phone: "",
+      tipoDocumento: "",
+      numeroDocumento: "",
+      nacionalidad: "",
+      fechaNacimiento: "",
+      genero: "",
       password: "",
       confirmPassword: "",
     },
@@ -58,17 +74,22 @@ export function RegisterPage() {
   );
 
   const handleRegister = (data) => {
-    const fullName = [data.firstName?.trim(), data.lastName?.trim()]
-      .filter(Boolean)
-      .join(" ");
     const payload = {
-      name: fullName,
-      email: data.email.trim(),
-      phone: data.phone?.trim() ?? "",
-      password: data.password,
-      role: "Cliente",
-      status: "active",
-      createdAt: new Date().toISOString(),
+      usuario: {
+        nombre: data.firstName,
+        apellido: data.lastName,
+        correo: data.email.toLowerCase(),
+        telefono: data.phone,
+        password: data.password,
+        rol: "TURISTA",
+      },
+      turista: {
+        tipo_documento: data.tipoDocumento,
+        numero_documento: data.numeroDocumento,
+        nacionalidad: data.nacionalidad,
+        fecha_nacimiento: data.fechaNacimiento,
+        genero: data.genero,
+      },
     };
     void runWithLoading(() => authServices.register(payload));
   };
@@ -139,6 +160,103 @@ export function RegisterPage() {
               </FormItem>
             )}
           />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="tipoDocumento"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo Documento</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccione tipo de documento" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {TIPO_DOCUMENTO_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="numeroDocumento"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Número Documento</FormLabel>
+                  <FormControl>
+                    <Input placeholder="123456789" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="fechaNacimiento"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fecha Nacimiento</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="genero"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Género</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccione género" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {GENERO_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <FormField
+            control={form.control}
+            name="nacionalidad"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nacionalidad</FormLabel>
+                <FormControl>
+                  <Input placeholder="Colombiano" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="password"
@@ -150,7 +268,7 @@ export function RegisterPage() {
                 </FormControl>
                 {passwordValue ? (
                   <PasswordHint ok={passwordStrong}>
-                    Mínimo 8 caracteres
+                    Mínimo 8 caracteres, mayúscula, minúscula y número
                   </PasswordHint>
                 ) : undefined}
                 <FormMessage />

@@ -8,13 +8,15 @@ import { EmptyState } from "@/features/admin/components/EmptyState";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, } from "@/shared/components/ui/dialog";
 import { Label } from "@/shared/components/ui/label";
 import { Input } from "@/shared/components/ui/input";
-export function BookingsStats({ total, confirmed, pending, revenue }) {
+export function BookingsStats({ total, confirmadas, pendientes, canceladas, completadas, revenue }) {
     return (<StatsGrid stats={[
             { title: "Total Reservas", value: total, icon: Calendar, color: "text-primary" },
-            { title: "Confirmadas", value: confirmed, icon: CalendarCheck, color: "text-success" },
-            { title: "Pendientes", value: pending, icon: Clock, color: "text-warning" },
+            { title: "Confirmadas", value: confirmadas, icon: CalendarCheck, color: "text-success" },
+            { title: "Pendientes", value: pendientes, icon: Clock, color: "text-warning" },
+            { title: "Canceladas", value: canceladas, icon: Calendar, color: "text-destructive" },
+            { title: "Completadas", value: completadas, icon: CalendarCheck, color: "text-info" },
             { title: "Ingresos", value: revenue, icon: DollarSign, color: "text-secondary" },
-        ]} columns={4}/>);
+        ]} columns={6}/>);
 }
 export function BookingsTable({ bookings, onDetail, onEdit, onDelete }) {
     return (<Table>
@@ -73,21 +75,22 @@ export function BookingDetailDialog({ open, onOpenChange, booking }) {
           <DialogDescription>Detalle completo de la reserva</DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-4 py-4">
+          <div><Label className="text-xs text-muted-foreground">Código Reserva</Label><Input disabled value={booking.codigo_reserva ?? `#${booking.id}`}/></div>
+          <div><Label className="text-xs text-muted-foreground">Fecha Reserva</Label><Input disabled value={booking.fecha_reserva ?? booking.date ?? "N/A"}/></div>
           <div><Label className="text-xs text-muted-foreground">Cliente</Label><Input disabled value={booking.customer}/></div>
           <div><Label className="text-xs text-muted-foreground">Estado</Label><div className="pt-2"><StatusBadge status={booking.status} map={bookingStatusMap}/></div></div>
-          <div><Label className="text-xs text-muted-foreground">Email</Label><Input disabled value={booking.email ?? "N/A"}/></div>
-          <div><Label className="text-xs text-muted-foreground">Teléfono</Label><Input disabled value={booking.phone ?? "N/A"}/></div>
-          <div><Label className="text-xs text-muted-foreground">Tour</Label><Input disabled value={booking.tour}/></div>
-          <div><Label className="text-xs text-muted-foreground">Guía</Label><Input disabled value={booking.guide ?? "Asignación pendiente"}/></div>
-          <div><Label className="text-xs text-muted-foreground">Fecha</Label><Input disabled value={booking.date}/></div>
-          <div><Label className="text-xs text-muted-foreground">Hora</Label><Input disabled value={booking.time}/></div>
-          <div><Label className="text-xs text-muted-foreground">Personas</Label><Input disabled value={String(booking.people)}/></div>
-          <div><Label className="text-xs text-muted-foreground">Total</Label><Input disabled value={`$${booking.total.toLocaleString()}`}/></div>
-          <div className="col-span-2"><Label className="text-xs text-muted-foreground">Método de pago</Label><Input disabled value={booking.paymentMethod ?? "N/A"}/></div>
+          <div className="col-span-2"><Label className="text-xs text-muted-foreground">Salida Tour</Label><Input disabled value={booking.salida_label ?? `${booking.tour} · ${booking.date ?? ""} ${booking.time ?? ""}`.trim()}/></div>
+          <div><Label className="text-xs text-muted-foreground">Guía</Label><Input disabled value={booking.guide_nombre ?? booking.guide ?? "Asignación pendiente"}/></div>
+          <div><Label className="text-xs text-muted-foreground">Cupos / Pax</Label><Input disabled value={`${booking.people} personas (${booking.cantidad_adultos ?? "?"} adultos, ${booking.cantidad_ninos ?? "?"} niños)`}/></div>
+          <div><Label className="text-xs text-muted-foreground">Precio Unitario</Label><Input disabled value={`$${(booking.precio_unitario ?? 0).toLocaleString()}`}/></div>
+          <div><Label className="text-xs text-muted-foreground">Descuento</Label><Input disabled value={`$${(booking.descuento ?? 0).toLocaleString()}`}/></div>
+          <div><Label className="text-xs text-muted-foreground">Subtotal</Label><Input disabled value={`$${(booking.subtotal ?? booking.total ?? 0).toLocaleString()}`}/></div>
+          <div><Label className="text-xs text-muted-foreground">Total</Label><Input disabled value={`$${(booking.total ?? 0).toLocaleString()}`}/></div>
+          {booking.status === "CANCELADA" && booking.motivo_cancelacion && (<div className="col-span-2"><Label className="text-xs text-muted-foreground">Motivo de Cancelación</Label><p className="text-sm bg-destructive/10 text-destructive rounded p-3 border border-destructive/20">{booking.motivo_cancelacion}</p></div>)}
         </div>
-        {booking.notes && (<div className="border-t pt-4 space-y-2">
-            <Label>Notas</Label>
-            <p className="text-sm text-muted-foreground bg-muted/40 rounded p-3">{booking.notes}</p>
+        {booking.observaciones && (<div className="border-t pt-4 space-y-2">
+            <Label>Observaciones</Label>
+            <p className="text-sm text-muted-foreground bg-muted/40 rounded p-3">{booking.observaciones}</p>
           </div>)}
         <DialogFooter><Button onClick={() => onOpenChange(false)}>Cerrar</Button></DialogFooter>
       </DialogContent>

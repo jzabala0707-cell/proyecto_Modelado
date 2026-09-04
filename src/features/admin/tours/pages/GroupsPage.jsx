@@ -5,7 +5,7 @@ import { Plus } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { SearchToolbar } from "@/features/admin/components/SearchToolbar";
 import { TablePagination } from "@/features/admin/components/TablePagination";
-import { GROUP_STATUS_OPTIONS } from "../tourServices";
+import { SALIDA_STATUS_OPTIONS } from "../tourServices";
 import { useGroupsPage } from "../hooks/useToursPage";
 import { GroupsStats } from "../components/GroupsStats";
 import { GroupsFilters } from "../components/GroupsFilters";
@@ -20,32 +20,36 @@ export function GroupsPage() {
         <DashboardLayout>
             <div className="space-y-6">
                 <PageHeader
-                    title="Asignación de Grupos"
-                    subtitle="Organiza grupos, asigna guías y gestiona participantes"
+                    title="Salidas de Tours"
+                    subtitle="Organiza salidas, asigna guías y gestiona cupos"
                     action={
                         <Button onClick={state.openCreate}>
                             <Plus className="mr-2 h-4 w-4" />
-                            Crear Grupo
+                            Crear Salida
                         </Button>
                     }
                 />
 
                 <GroupsStats
                     total={state.stats.total}
-                    totalParticipants={state.stats.totalParticipants}
-                    confirmed={state.stats.confirmed}
+                    totalParticipantes={state.stats.totalParticipantes}
+                    disponibles={state.stats.disponibles}
+                    completas={state.stats.completas}
+                    programadas={state.stats.programadas}
+                    finalizadas={state.stats.finalizadas}
+                    canceladas={state.stats.canceladas}
                     filtered={state.stats.filtered}
                 />
 
                 <SearchToolbar
                     searchTerm={state.search.searchTerm}
                     onSearchChange={state.search.setSearchTerm}
-                    searchPlaceholder="Buscar grupo..."
-                    statusFilter={state.filters.status}
+                    searchPlaceholder="Buscar salida..."
+                    statusFilter={state.filters.estado}
                     onStatusFilterChange={(value) =>
-                        state.setFilters({ ...state.filters, status: value })
+                        state.setFilters({ ...state.filters, estado: value })
                     }
-                    statusOptions={GROUP_STATUS_OPTIONS}
+                    statusOptions={SALIDA_STATUS_OPTIONS}
                     hasActiveFilters={state.hasActiveFilters}
                     onToggleFilters={state.dialogs.toggleFilters}
                     onExport={state.handleExportCSV}
@@ -77,7 +81,7 @@ export function GroupsPage() {
                             totalPages={state.pagination.totalPages}
                             totalItems={state.pagination.totalItems}
                             onPageChange={state.pagination.goToPage}
-                            itemsLabel="grupos"
+                            itemsLabel="salidas"
                         />
                     </CardContent>
                 </Card>

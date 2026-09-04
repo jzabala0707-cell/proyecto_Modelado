@@ -2,44 +2,73 @@ import { z } from "zod";
 import {
   shortTextSchema,
   longTextSchema,
-  positiveIntSchema,
-  positiveNumberSchema,
-  nonNegativeNumberSchema,
-  requiredSelectSchema,
-  ratingSchema,
-  csvStringArrayTransform,
-  requiredDateSchema,
-  optionalString,
   optionalLongText,
+  requiredBigIntSchema,
+  nonNegativeIntSchema,
+  positiveIntSchema,
+  precioSchema,
+  estadoTourSchema,
+  estadoSalidaSchema,
+  estadoGrupoSchema,
+  optionalColorSchema,
+  nameSchema,
+  requiredDateSchema,
   requiredString,
+  optionalSelect,
 } from "@/shared/validations/sharedSchemas";
 
 export const tourSchema = z.object({
-  name: shortTextSchema("El nombre del tour es obligatorio.", 120),
-  type: requiredSelectSchema("Seleccione el tipo de tour."),
-  duration: shortTextSchema("La duración es obligatoria.", 40),
-  capacity: positiveIntSchema("La capacidad es obligatoria."),
-  price: positiveNumberSchema("El precio es obligatorio."),
-  rating: ratingSchema,
-  status: requiredSelectSchema("Seleccione un estado."),
-  description: longTextSchema("La descripción es obligatoria.", 1500),
-  language: csvStringArrayTransform.optional().default([]),
-});
-
-export const groupSchema = z.object({
-  tourName: requiredSelectSchema("Seleccione un tour."),
-  groupName: shortTextSchema("El nombre del grupo es obligatorio.", 80),
-  guideName: requiredSelectSchema("Seleccione un guía."),
-  date: requiredDateSchema("La fecha es obligatoria."),
-  startTime: z.string().min(1, "La hora de inicio es obligatoria."),
-  maxCapacity: positiveIntSchema("La capacidad máxima es obligatoria."),
-  status: requiredSelectSchema("Seleccione un estado."),
-  meetingPoint: shortTextSchema("El punto de encuentro es obligatorio.", 150),
-  notes: optionalLongText(800),
+  nombre: shortTextSchema("Nombre del tour es obligatorio.", 150),
+  id_categoria: requiredBigIntSchema("Seleccione una categoría."),
+  duracion_horas: z.coerce
+    .number()
+    .positive("Duración debe ser >0")
+    .max(999, "Máx 999.99"),
+  capacidad_maxima: positiveIntSchema("Capacidad máxima es obligatoria."),
+  precio_base: precioSchema("Precio base es obligatorio."),
+  estado: estadoTourSchema,
+  descripcion: longTextSchema("Descripción es obligatoria.", 1500),
+  punto_encuentro: shortTextSchema("Punto de encuentro es obligatorio.", 255),
+  destino: optionalLongText(255),
+  dificultad: optionalLongText(50),
+  edad_minima: nonNegativeIntSchema("")
+    .optional()
+    .nullish()
+    .or(z.literal(""))
+    .transform((v) => (v ? Number(v) : null)),
+  edad_maxima: nonNegativeIntSchema("")
+    .optional()
+    .nullish()
+    .or(z.literal(""))
+    .transform((v) => (v ? Number(v) : null)),
+  latitud: z.coerce.number().min(-90).max(90).optional(),
+  longitud: z.coerce.number().min(-180).max(180).optional(),
+  incluye: optionalLongText(),
+  no_incluye: optionalLongText(),
+  recomendaciones: optionalLongText(),
+  politica_cancelacion: optionalLongText(),
 });
 
 export const tourTypeSchema = z.object({
-  name: shortTextSchema("El nombre del tipo de tour es obligatorio.", 60),
-  description: longTextSchema("La descripción es obligatoria.", 400),
-  color: requiredSelectSchema("Seleccione un color."),
+  nombre: shortTextSchema("Nombre categoría", 100),
+  descripcion: optionalLongText(255),
+  color: optionalColorSchema,
+  activo: z.boolean().default(true),
+});
+
+export const salidaSchema = z.object({
+  id_tour: requiredBigIntSchema("Seleccione un tour."),
+  id_guia: requiredBigIntSchema("Seleccione un guía.").optional().nullable(),
+  fecha_salida: requiredDateSchema("Fecha de salida es obligatoria."),
+  hora_salida: requiredString("Hora salida obligatoria.", 4),
+  hora_finalizacion: optionalSelect(),
+  cupo_maximo: positiveIntSchema("Cupo máximo es obligatorio."),
+  estado: estadoSalidaSchema,
+  observaciones: optionalLongText(),
+});
+
+export const grupoSchema = z.object({
+  nombre: shortTextSchema("Nombre del grupo es obligatorio.", 100),
+  descripcion: optionalLongText(),
+  estado: estadoGrupoSchema,
 });

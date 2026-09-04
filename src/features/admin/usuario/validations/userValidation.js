@@ -1,42 +1,47 @@
 import { z } from "zod";
 import {
-  fullNameSchema,
-  emailSchema,
+  nameSchema,
+  emailLowercaseSchema,
   optionalPhoneSchema,
-  requiredSelectSchema,
-  optionalString,
+  requiredBigIntSchema,
+  estadoUsuarioSchema,
+  nonEmptyArraySchema,
+  optionalLongText,
+  requiredString,
+  optionalColorSchema,
   shortTextSchema,
+  strongPasswordSchema,
 } from "@/shared/validations/sharedSchemas";
 
 export const userCreateSchema = z.object({
-  name: fullNameSchema,
-  email: emailSchema,
-  phone: optionalPhoneSchema,
-  role: requiredSelectSchema("Seleccione un rol."),
-  status: requiredSelectSchema("Seleccione un estado."),
-  department: optionalString(),
-  address: optionalString(),
-  password: z
-    .string({ required_error: "La contraseña es obligatoria." })
-    .trim()
-    .min(8, "La contraseña debe tener al menos 8 caracteres.")
-    .max(128),
+  firstName: nameSchema("Nombre obligatorio"),
+  lastName: nameSchema("Apellido obligatorio"),
+  correo: emailLowercaseSchema,
+  telefono: optionalPhoneSchema,
+  rolId: requiredBigIntSchema("Seleccione un rol."),
+  estado: estadoUsuarioSchema,
+  cargo: optionalLongText(120),
+  departamento: optionalLongText(120),
+  direccion: optionalLongText(255),
+  password: strongPasswordSchema,
 });
 
 export const userEditSchema = z.object({
-  name: fullNameSchema,
-  email: emailSchema,
-  phone: optionalPhoneSchema,
-  role: requiredSelectSchema("Seleccione un rol."),
-  status: requiredSelectSchema("Seleccione un estado."),
-  department: optionalString(),
-  address: optionalString(),
+  firstName: nameSchema("Nombre obligatorio"),
+  lastName: nameSchema("Apellido obligatorio"),
+  correo: emailLowercaseSchema,
+  telefono: optionalPhoneSchema,
+  rolId: requiredBigIntSchema("Seleccione un rol."),
+  estado: estadoUsuarioSchema,
+  cargo: optionalLongText(120),
+  departamento: optionalLongText(120),
+  direccion: optionalLongText(255),
+  password: strongPasswordSchema.nullish(),
 });
 
 export const roleSchema = z.object({
-  name: shortTextSchema("El nombre del rol es obligatorio.", 50),
-  description: shortTextSchema("La descripción es obligatoria.", 200),
-  permissions: z
-    .array(z.string())
-    .min(1, "Seleccione al menos un permiso."),
+  nombre: shortTextSchema("Nombre rol", 50),
+  descripcion: optionalLongText(255),
+  activo: z.boolean().default(true),
+  permisosIds: z.array(requiredBigIntSchema()).default([]),
 });

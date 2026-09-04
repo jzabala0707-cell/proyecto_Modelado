@@ -5,7 +5,7 @@ import { Plus } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { SearchToolbar } from "@/features/admin/components/SearchToolbar";
 import { TablePagination } from "@/features/admin/components/TablePagination";
-import { CLIENT_STATUS_OPTIONS } from "@/features/admin/reservas/bookingServices";
+import { CLIENT_STATUS_OPTIONS } from "@/features/admin/clientes/clientServices";
 import { useClientsPage } from "../hooks/useClientsPage";
 import { ClientsStats, ClientDetailDialog } from "../components/ClientsStats";
 import { ClientsFilters } from "../components/ClientsFilters";
@@ -31,7 +31,7 @@ export function ClientsPage() {
                 <ClientsStats
                     total={state.stats.total}
                     vip={state.stats.vip}
-                    active={state.stats.active}
+                    activos={state.stats.activos}
                     totalRevenue={state.stats.totalRevenue}
                 />
 

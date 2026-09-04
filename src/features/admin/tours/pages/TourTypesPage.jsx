@@ -19,27 +19,27 @@ export function TourTypesPage() {
         <DashboardLayout>
             <div className="space-y-6">
                 <PageHeader
-                    title="Tipos de Tours"
-                    subtitle="Clasifica y categoriza tus tours por tipo"
+                    title="Categorías de Tours"
+                    subtitle="Clasifica y categoriza tus tours"
                     action={
                         <Button onClick={state.openCreate}>
                             <Plus className="mr-2 h-4 w-4" />
-                            Crear Tipo
+                            Crear Categoría
                         </Button>
                     }
                 />
 
                 <TourTypesStats
                     total={state.stats.total}
-                    totalTours={state.stats.totalTours}
-                    activeTours={state.stats.activeTours}
+                    activos={state.stats.activos}
+                    inactivos={state.stats.inactivos}
                     filtered={state.stats.filtered}
                 />
 
                 <SearchToolbar
                     searchTerm={state.search.searchTerm}
                     onSearchChange={state.search.setSearchTerm}
-                    searchPlaceholder="Buscar tipo de tour..."
+                    searchPlaceholder="Buscar categoría..."
                     hasActiveFilters={state.hasActiveFilters}
                     onToggleFilters={state.dialogs.toggleFilters}
                     onExport={state.handleExportCSV}
@@ -70,7 +70,7 @@ export function TourTypesPage() {
                             totalPages={state.pagination.totalPages}
                             totalItems={state.pagination.totalItems}
                             onPageChange={state.pagination.goToPage}
-                            itemsLabel="tipos de tour"
+                            itemsLabel="categorías"
                         />
                     </CardContent>
                 </Card>

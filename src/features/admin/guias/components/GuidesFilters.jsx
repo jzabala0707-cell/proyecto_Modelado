@@ -3,45 +3,28 @@ import { Label } from "@/shared/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { Button } from "@/shared/components/ui/button";
 import { X } from "lucide-react";
-import { GUIDE_LANGUAGE_OPTIONS, GUIDE_SPECIALTY_OPTIONS } from "../guideServices";
+import { IDIOMA_OPTIONS } from "../guideServices";
+import { ESTADO_USUARIO_OPTIONS } from "@/shared/constants/dbEnums";
 
 export function GuidesFilters({ filters, setFilters, onClear }) {
-    const allLanguages = [{ value: "all", label: "Todos los idiomas" }, ...GUIDE_LANGUAGE_OPTIONS];
-    const allSpecialties = [{ value: "all", label: "Todas las especialidades" }, ...GUIDE_SPECIALTY_OPTIONS];
+    const allIdiomas = [{ value: "all", label: "Todos los idiomas" }, ...IDIOMA_OPTIONS];
 
     return (
         <Card>
             <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div className="space-y-2">
-                        <Label>Estado</Label>
+                        <Label>Estado Usuario</Label>
                         <Select
-                            value={filters.status}
-                            onValueChange={(value) => setFilters({ ...filters, status: value })}
+                            value={filters.estado_usuario}
+                            onValueChange={(value) => setFilters({ ...filters, estado_usuario: value })}
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Seleccionar estado" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">Todos</SelectItem>
-                                <SelectItem value="active">Disponible</SelectItem>
-                                <SelectItem value="busy">Ocupado</SelectItem>
-                                <SelectItem value="inactive">Inactivo</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label>Idioma</Label>
-                        <Select
-                            value={filters.language}
-                            onValueChange={(value) => setFilters({ ...filters, language: value })}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar idioma" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {allLanguages.map((opt) => (
+                                {ESTADO_USUARIO_OPTIONS.map((opt) => (
                                     <SelectItem key={opt.value} value={opt.value}>
                                         {opt.label}
                                     </SelectItem>
@@ -51,17 +34,51 @@ export function GuidesFilters({ filters, setFilters, onClear }) {
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Especialidad</Label>
+                        <Label>Disponibilidad</Label>
                         <Select
-                            value={filters.specialty}
-                            onValueChange={(value) => setFilters({ ...filters, specialty: value })}
+                            value={filters.disponibilidad}
+                            onValueChange={(value) => setFilters({ ...filters, disponibilidad: value })}
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar especialidad" />
+                                <SelectValue placeholder="Seleccionar disponibilidad" />
                             </SelectTrigger>
                             <SelectContent>
-                                {allSpecialties.map((opt) => (
-                                    <SelectItem key={opt.value} value={opt.value}>
+                                <SelectItem value="all">Todos</SelectItem>
+                                <SelectItem value="disponible">Disponible</SelectItem>
+                                <SelectItem value="no_disponible">No Disponible</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Activo en Sistema</Label>
+                        <Select
+                            value={filters.activo}
+                            onValueChange={(value) => setFilters({ ...filters, activo: value })}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos</SelectItem>
+                                <SelectItem value="activo">Activo</SelectItem>
+                                <SelectItem value="inactivo">Inactivo</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Idioma</Label>
+                        <Select
+                            value={filters.id_idioma}
+                            onValueChange={(value) => setFilters({ ...filters, id_idioma: value })}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Seleccionar idioma" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {allIdiomas.map((opt) => (
+                                    <SelectItem key={opt.value} value={String(opt.value)}>
                                         {opt.label}
                                     </SelectItem>
                                 ))}

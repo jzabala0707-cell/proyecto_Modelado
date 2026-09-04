@@ -10,6 +10,10 @@ import {
 } from "@/shared/components/ui/alert-dialog";
 
 export function GuideDeleteDialog({ open, onOpenChange, guide, onConfirm }) {
+    const nombreCompleto = guide
+        ? (guide.firstName ?? "") + " " + (guide.lastName ?? "")
+        : "";
+    const nombreMostrar = nombreCompleto.trim() || guide?.name || "";
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent>
@@ -19,7 +23,7 @@ export function GuideDeleteDialog({ open, onOpenChange, guide, onConfirm }) {
                     </AlertDialogTitle>
                     <AlertDialogDescription>
                         Esta acción no se puede deshacer. Se eliminará permanentemente al guía{" "}
-                        <strong>{guide?.name}</strong>.
+                        <strong>{nombreMostrar}</strong>.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

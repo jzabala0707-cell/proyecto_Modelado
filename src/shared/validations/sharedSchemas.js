@@ -1,4 +1,15 @@
 import { z } from "zod";
+import {
+  TIPO_DOCUMENTO_ENUM,
+  GENERO_ENUM,
+  NIVEL_IDIOMA_ENUM,
+  ESTADO_USUARIO_ENUM,
+  ESTADO_TOUR_ENUM,
+  ESTADO_SALIDA_ENUM,
+  ESTADO_RESERVA_ENUM,
+  ESTADO_GRUPO_ENUM,
+  ESTADO_VENTA_ENUM,
+} from "../constants/dbEnums.js";
 
 const SPANISH_NAME_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÜüÑñ\s'\-]+$/;
 const COLOMBIAN_PHONE_REGEX = /^(\+?\d{1,3}[-.\s]?)?\d{7,15}$/;
@@ -37,9 +48,10 @@ export const confirmPasswordSchema = z
   .trim()
   .min(1, "Confirma la contraseña.");
 
-export const nameSchema = requiredString("El nombre es obligatorio.", 2)
-  .max(100, "El nombre es demasiado largo.")
-  .regex(SPANISH_NAME_REGEX, "El nombre solo puede contener letras, espacios y acentos.");
+export const nameSchema = (message = "El nombre es obligatorio.") =>
+  requiredString(message, 2)
+    .max(100, "El nombre es demasiado largo.")
+    .regex(SPANISH_NAME_REGEX, "El nombre solo puede contener letras, espacios y acentos.");
 
 export const fullNameSchema = requiredString("El nombre completo es obligatorio.", 3)
   .max(150, "El nombre completo es demasiado largo.")
@@ -170,3 +182,126 @@ export const registerPasswordMatchRefine = (schema) =>
     message: "Las contraseñas no coinciden.",
     path: ["confirmPassword"],
   });
+
+export function enumSchema(allowedValues, message = "Valor inválido.") {
+  return z
+    .string({ required_error: message })
+    .trim()
+    .toUpperCase()
+    .refine((v) => allowedValues.includes(v), message);
+}
+
+export function optionalEnumSchema(allowedValues) {
+  return z
+    .string()
+    .nullish()
+    .or(z.literal(""))
+    .transform((v) => (v ? String(v).trim().toUpperCase() : ""))
+    .refine((v) => !v || allowedValues.includes(v), "Valor inválido.");
+}
+
+export const tipoDocumentoSchema = enumSchema(
+  TIPO_DOCUMENTO_ENUM,
+  "Seleccione un tipo de documento."
+);
+
+export const generoSchema = optionalEnumSchema(GENERO_ENUM);
+
+export const nivelIdiomaSchema = enumSchema(
+  NIVEL_IDIOMA_ENUM,
+  "Seleccione un nivel."
+);
+
+export const estadoUsuarioSchema = enumSchema(
+  ESTADO_USUARIO_ENUM,
+  "Seleccione un estado."
+);
+
+export const estadoTourSchema = enumSchema(
+  ESTADO_TOUR_ENUM,
+  "Seleccione un estado."
+);
+
+export const estadoSalidaSchema = enumSchema(
+  ESTADO_SALIDA_ENUM,
+  "Seleccione un estado."
+);
+
+export const estadoReservaSchema = enumSchema(
+  ESTADO_RESERVA_ENUM,
+  "Seleccione un estado."
+);
+
+export const estadoGrupoSchema = enumSchema(
+  ESTADO_GRUPO_ENUM,
+  "Seleccione un estado."
+);
+
+export const estadoVentaSchema = enumSchema(
+  ESTADO_VENTA_ENUM,
+  "Seleccione un estado."
+);
+
+export const bigIntIdSchema = z.union([
+  z
+    .number({ invalid_type_error: "Debe ser un ID numérico." })
+    .int("Debe ser entero.")
+    .positive("ID debe ser positivo."),
+  z
+    .string()
+    .trim()
+    .refine((v) => /^\d+$/.test(v), "Debe ser un ID numérico.")
+    .transform((v) => Number(v)),
+]);
+
+export const requiredBigIntSchema = (message = "Seleccione una opción.") =>
+  bigIntIdSchema.refine((v) => Number(v) > 0, message);
+
+export const emailLowercaseSchema = emailSchema.transform((v) =>
+  v.toLowerCase()
+);
+
+export function splitFullNameToFirstLast(fullName) {
+  const trimmed = String(fullName || "").trim();
+  if (!trimmed) return { nombre: "", apellido: "" };
+  const parts = trimmed.split(/\s+/);
+  if (parts.length === 1) return { nombre: parts[0], apellido: "" };
+  const mid = Math.ceil(parts.length / 2);
+  return {
+    nombre: parts.slice(0, mid).join(" "),
+    apellido: parts.slice(mid).join(" "),
+  };
+}
+
+export function joinFirstLastToFull(nombre = "", apellido = "") {
+  return [String(nombre || "").trim(), String(apellido || "").trim()]
+    .filter(Boolean)
+    .join(" ");
+}
+
+export function precioSchema(message = "El precio es obligatorio.") {
+  return z
+    .number({ required_error: message, invalid_type_error: "Debe ser un número." })
+    .min(0, "El precio no puede ser negativo.");
+}
+
+export function porcentajeSchema(message = "El descuento es obligatorio.") {
+  return z
+    .number({ required_error: message, invalid_type_error: "Debe ser un número." })
+    .min(0, "No puede ser negativo.")
+    .max(100, "No puede exceder el 100%.");
+}
+
+export const HEX_COLOR_REGEX = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
+
+export const colorSchema = z
+  .string({ required_error: "Seleccione un color." })
+  .trim()
+  .regex(HEX_COLOR_REGEX, "Color hex inválido (ej: #FF8A3D).");
+
+export const optionalColorSchema = z
+  .string()
+  .nullish()
+  .or(z.literal(""))
+  .transform((v) => (v ? String(v).trim() : ""))
+  .refine((v) => !v || HEX_COLOR_REGEX.test(v), "Color hex inválido.");

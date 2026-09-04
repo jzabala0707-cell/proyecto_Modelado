@@ -3,10 +3,12 @@ import { Label } from "@/shared/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/shared/components/ui/select";
 import { Button } from "@/shared/components/ui/button";
 import { X } from "lucide-react";
-import { CLIENT_STATUS_OPTIONS, NATIONALITY_OPTIONS } from "@/features/admin/reservas/bookingServices";
+import { CLIENT_STATUS_OPTIONS, CLIENT_VIP_OPTIONS } from "@/features/admin/clientes/clientServices";
+import { NATIONALITY_OPTIONS } from "@/features/admin/reservas/bookingServices";
 export function ClientsFilters({ filters, setFilters, onClear }) {
     const allStatuses = CLIENT_STATUS_OPTIONS;
     const allNationalities = [{ value: "all", label: "Todas las nacionalidades" }, ...NATIONALITY_OPTIONS];
+    const allVip = CLIENT_VIP_OPTIONS;
     return (
         <Card>
             <CardContent className="pt-6">
@@ -57,9 +59,11 @@ export function ClientsFilters({ filters, setFilters, onClear }) {
                                 <SelectValue placeholder="Filtro VIP" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Todos</SelectItem>
-                                <SelectItem value="yes">Sí, VIP</SelectItem>
-                                <SelectItem value="no">No VIP</SelectItem>
+                                {allVip.map((opt) => (
+                                    <SelectItem key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>

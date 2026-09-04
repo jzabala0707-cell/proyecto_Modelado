@@ -32,9 +32,10 @@ export function ToursPage() {
 
                 <ToursStats
                     total={state.stats.total}
-                    active={state.stats.active}
+                    activos={state.stats.activos}
+                    inactivos={state.stats.inactivos}
+                    borradores={state.stats.borradores}
                     avgPrice={state.stats.avgPrice}
-                    avgRating={state.stats.avgRating}
                     filtered={state.stats.filtered}
                 />
 
@@ -42,9 +43,9 @@ export function ToursPage() {
                     searchTerm={state.search.searchTerm}
                     onSearchChange={state.search.setSearchTerm}
                     searchPlaceholder="Buscar tour..."
-                    statusFilter={state.filters.status}
+                    statusFilter={state.filters.estado}
                     onStatusFilterChange={(value) =>
-                        state.setFilters({ ...state.filters, status: value })
+                        state.setFilters({ ...state.filters, estado: value })
                     }
                     statusOptions={TOUR_STATUS_OPTIONS}
                     hasActiveFilters={state.hasActiveFilters}

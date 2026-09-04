@@ -27,10 +27,16 @@ import {
     SelectValue,
 } from "@/shared/components/ui/select";
 import { Button } from "@/shared/components/ui/button";
-import { Badge } from "@/shared/components/ui/badge";
-import { TOUR_TYPE_OPTIONS, LANGUAGE_OPTIONS } from "../tourServices";
+import { mockCategoriasTour } from "../tourServices";
 import { tourSchema } from "../validations/tourValidation";
-import { X } from "lucide-react";
+import { ESTADO_TOUR_OPTIONS, DIFICULTAD_OPTIONS } from "@/shared/constants/dbEnums";
+
+const CATEGORIA_OPTIONS = Array.isArray(mockCategoriasTour)
+    ? mockCategoriasTour.map((c) => ({
+          value: String(c.id_categoria ?? c.id),
+          label: c.nombre,
+      }))
+    : [];
 
 export function TourCreateEditDialog({
     open,
@@ -53,83 +59,19 @@ export function TourCreateEditDialog({
     }, [open, formData, form]);
 
     const handleValidSubmit = (validData) => {
-        const tourTypeId = Number(validData.type);
-        const languageIds = Array.isArray(validData.language)
-            ? validData.language.filter((v) => !Number.isNaN(Number(v))).map(Number)
-            : [];
         const payload = {
             ...validData,
-            tourTypeId: Number.isNaN(tourTypeId) ? null : tourTypeId,
-            languageIds,
-            rating: validData.rating ?? 0,
+            id_categoria: validData.id_categoria
+                ? Number(validData.id_categoria)
+                : null,
         };
         setFormData(payload);
         onSubmit(payload);
     };
 
-    const toggleChip = (field, options, optionId) => {
-        const currentIds = Array.isArray(field.value) ? field.value.map(String) : [];
-        const idStr = String(optionId);
-        const nextIds = currentIds.includes(idStr)
-            ? currentIds.filter((id) => id !== idStr)
-            : [...currentIds, idStr];
-        const nextValues = nextIds.map((id) => {
-            const opt = options.find((o) => String(o.value) === id);
-            return opt ? String(opt.value) : id;
-        });
-        field.onChange(nextValues);
-    };
-
-    const removeChip = (field, id) => {
-        const currentIds = Array.isArray(field.value) ? field.value.map(String) : [];
-        const nextIds = currentIds.filter((v) => String(v) !== String(id));
-        field.onChange(nextIds);
-    };
-
-    const renderLanguageChips = (field) => {
-        const currentIds = Array.isArray(field.value) ? field.value.map(String) : [];
-        const labelsSelected = LANGUAGE_OPTIONS.filter((o) => currentIds.includes(String(o.value)));
-        const unselected = LANGUAGE_OPTIONS.filter((o) => !currentIds.includes(String(o.value)));
-        return (
-            <div className="space-y-2">
-                <div className="flex flex-wrap gap-1.5 min-h-[36px] border rounded-md px-3 py-2 bg-background focus-within:ring-1 focus-within:ring-ring">
-                    {labelsSelected.length === 0
-                        ? (<span className="text-muted-foreground text-sm self-center">Selecciona idiomas...</span>)
-                        : labelsSelected.map((opt) => (
-                            <Badge key={opt.value} variant="secondary" className="flex items-center gap-1 pr-1">
-                                {opt.label}
-                                <button
-                                    type="button"
-                                    onClick={() => removeChip(field, opt.value)}
-                                    className="rounded-sm opacity-60 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring px-1"
-                                    aria-label={`Quitar ${opt.label}`}
-                                >
-                                    <X className="h-3 w-3" />
-                                </button>
-                            </Badge>
-                        ))}
-                </div>
-                {unselected.length > 0 && (
-                    <div className="flex flex-wrap gap-1 pt-1">
-                        {unselected.map((opt) => (
-                            <button
-                                type="button"
-                                key={opt.value}
-                                onClick={() => toggleChip(field, LANGUAGE_OPTIONS, opt.value)}
-                                className="text-xs rounded-md border border-dashed px-2.5 py-1 text-muted-foreground hover:text-foreground hover:border-solid transition"
-                            >
-                                + {opt.label}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-        );
-    };
-
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[640px] max-h-[85vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[720px] max-h-[85vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{isEdit ? "Editar Tour" : "Crear Nuevo Tour"}</DialogTitle>
                     <DialogDescription>
@@ -141,7 +83,7 @@ export function TourCreateEditDialog({
                         <div className="grid grid-cols-2 gap-4 py-4">
                             <FormField
                                 control={form.control}
-                                name="name"
+                                name="nombre"
                                 render={({ field }) => (
                                     <FormItem className="col-span-2">
                                         <FormLabel>Nombre del Tour</FormLabel>
@@ -157,21 +99,21 @@ export function TourCreateEditDialog({
                             />
                             <FormField
                                 control={form.control}
-                                name="type"
+                                name="id_categoria"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Tipo</FormLabel>
+                                        <FormLabel>Categoría</FormLabel>
                                         <Select
-                                            onValueChange={field.onChange}
-                                            value={field.value}
+                                            onValueChange={(v) => field.onChange(Number(v))}
+                                            value={field.value != null ? String(field.value) : undefined}
                                         >
                                             <FormControl>
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccionar tipo" />
+                                                    <SelectValue placeholder="Seleccionar categoría" />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                {TOUR_TYPE_OPTIONS.map((opt) => (
+                                                {CATEGORIA_OPTIONS.map((opt) => (
                                                     <SelectItem key={opt.value} value={opt.value}>
                                                         {opt.label}
                                                     </SelectItem>
@@ -184,14 +126,22 @@ export function TourCreateEditDialog({
                             />
                             <FormField
                                 control={form.control}
-                                name="duration"
+                                name="duracion_horas"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Duración</FormLabel>
+                                        <FormLabel>Duración (horas)</FormLabel>
                                         <FormControl>
                                             <Input
-                                                {...field}
-                                                placeholder="3 horas"
+                                                type="number"
+                                                step="0.5"
+                                                min="0"
+                                                value={field.value ?? ""}
+                                                onChange={(e) =>
+                                                    field.onChange(
+                                                        e.target.value === "" ? "" : Number(e.target.value)
+                                                    )
+                                                }
+                                                placeholder="Ej: 3.5"
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -200,10 +150,10 @@ export function TourCreateEditDialog({
                             />
                             <FormField
                                 control={form.control}
-                                name="capacity"
+                                name="capacidad_maxima"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Capacidad</FormLabel>
+                                        <FormLabel>Capacidad Máxima</FormLabel>
                                         <FormControl>
                                             <Input
                                                 type="number"
@@ -223,10 +173,10 @@ export function TourCreateEditDialog({
                             />
                             <FormField
                                 control={form.control}
-                                name="price"
+                                name="precio_base"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Precio (COP)</FormLabel>
+                                        <FormLabel>Precio Base (COP)</FormLabel>
                                         <FormControl>
                                             <Input
                                                 type="number"
@@ -246,23 +196,7 @@ export function TourCreateEditDialog({
                             />
                             <FormField
                                 control={form.control}
-                                name="rating"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Rating (calculado - solo lectura)</FormLabel>
-                                        <FormControl>
-                                            <Badge variant="outline" className="h-9 px-3 justify-center text-sm font-medium gap-2 inline-flex w-full">
-                                                ⭐ <span>{field.value ? Number(field.value).toFixed(1) : "0.0"}</span>
-                                                <span className="text-muted-foreground text-xs ml-auto">Promedio reviews</span>
-                                            </Badge>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="status"
+                                name="estado"
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Estado</FormLabel>
@@ -272,12 +206,15 @@ export function TourCreateEditDialog({
                                         >
                                             <FormControl>
                                                 <SelectTrigger>
-                                                    <SelectValue />
+                                                    <SelectValue placeholder="Seleccionar estado" />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="active">Activo</SelectItem>
-                                                <SelectItem value="inactive">Inactivo</SelectItem>
+                                                {ESTADO_TOUR_OPTIONS.map((opt) => (
+                                                    <SelectItem key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
@@ -286,7 +223,158 @@ export function TourCreateEditDialog({
                             />
                             <FormField
                                 control={form.control}
-                                name="description"
+                                name="punto_encuentro"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Punto de Encuentro</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                placeholder="Estación San Javier (Metro)"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="destino"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Destino</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                placeholder="Comuna 13, Medellín"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="dificultad"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Dificultad</FormLabel>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            value={field.value}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Seleccionar dificultad" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {DIFICULTAD_OPTIONS.map((opt) => (
+                                                    <SelectItem key={opt.value} value={opt.value}>
+                                                        {opt.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="edad_minima"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Edad Mínima</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                min={0}
+                                                value={field.value ?? ""}
+                                                onChange={(e) =>
+                                                    field.onChange(
+                                                        e.target.value === "" ? "" : Number(e.target.value)
+                                                    )
+                                                }
+                                                placeholder="Ej: 8"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="edad_maxima"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Edad Máxima</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                min={0}
+                                                value={field.value ?? ""}
+                                                onChange={(e) =>
+                                                    field.onChange(
+                                                        e.target.value === "" ? "" : Number(e.target.value)
+                                                    )
+                                                }
+                                                placeholder="Ej: 80"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="latitud"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Latitud</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                step="0.000001"
+                                                value={field.value ?? ""}
+                                                onChange={(e) =>
+                                                    field.onChange(
+                                                        e.target.value === "" ? "" : Number(e.target.value)
+                                                    )
+                                                }
+                                                placeholder="6.2442"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="longitud"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Longitud</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                step="0.000001"
+                                                value={field.value ?? ""}
+                                                onChange={(e) =>
+                                                    field.onChange(
+                                                        e.target.value === "" ? "" : Number(e.target.value)
+                                                    )
+                                                }
+                                                placeholder="-75.5812"
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="descripcion"
                                 render={({ field }) => (
                                     <FormItem className="col-span-2">
                                         <FormLabel>Descripción</FormLabel>
@@ -303,12 +391,67 @@ export function TourCreateEditDialog({
                             />
                             <FormField
                                 control={form.control}
-                                name="language"
+                                name="incluye"
                                 render={({ field }) => (
                                     <FormItem className="col-span-2">
-                                        <FormLabel>Idiomas (tabla puente tour_languages)</FormLabel>
+                                        <FormLabel>Incluye</FormLabel>
                                         <FormControl>
-                                            {renderLanguageChips(field)}
+                                            <Textarea
+                                                {...field}
+                                                placeholder="Guía, transporte, entradas, refrigerio..."
+                                                rows={2}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="no_incluye"
+                                render={({ field }) => (
+                                    <FormItem className="col-span-2">
+                                        <FormLabel>No Incluye</FormLabel>
+                                        <FormControl>
+                                            <Textarea
+                                                {...field}
+                                                placeholder="Almuerzo, propinas, transporte a punto encuentro..."
+                                                rows={2}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="recomendaciones"
+                                render={({ field }) => (
+                                    <FormItem className="col-span-2">
+                                        <FormLabel>Recomendaciones</FormLabel>
+                                        <FormControl>
+                                            <Textarea
+                                                {...field}
+                                                placeholder="Zapatos cómodos, gorra, bloqueador solar, agua..."
+                                                rows={2}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="politica_cancelacion"
+                                render={({ field }) => (
+                                    <FormItem className="col-span-2">
+                                        <FormLabel>Política de Cancelación</FormLabel>
+                                        <FormControl>
+                                            <Textarea
+                                                {...field}
+                                                placeholder="Cancelación con 48h de antelación..."
+                                                rows={2}
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

@@ -5,13 +5,19 @@ import { Plus } from "lucide-react";
 import { Card, CardContent } from "@/shared/components/ui/card";
 import { SearchToolbar } from "@/features/admin/components/SearchToolbar";
 import { TablePagination } from "@/features/admin/components/TablePagination";
-import { GUIDE_STATUS_OPTIONS } from "../guideServices";
 import { useGuidesPage } from "../hooks/useGuidesPage";
 import { GuideStats, GuideDetailDialog } from "../components/GuidesStats";
 import { GuidesFilters } from "../components/GuidesFilters";
 import { GuidesTableFull } from "../components/GuidesTableFull";
 import { GuideCreateEditDialog } from "../components/GuideCreateEditDialog";
 import { GuideDeleteDialog } from "../components/GuideDeleteDialog";
+
+const STATUS_OPTIONS = [
+    { value: "all", label: "Todos los estados" },
+    { value: "ACTIVO", label: "Activos" },
+    { value: "INACTIVO", label: "Inactivos" },
+    { value: "BLOQUEADO", label: "Bloqueados" },
+];
 
 export function GuidesPage() {
     const state = useGuidesPage();
@@ -32,9 +38,9 @@ export function GuidesPage() {
 
                 <GuideStats
                     total={state.stats.total}
-                    available={state.stats.available}
-                    busy={state.stats.busy}
-                    inactive={state.stats.inactive}
+                    disponibles={state.stats.disponibles}
+                    ocupados={state.stats.ocupados}
+                    inactivos={state.stats.inactivos}
                     avgRating={state.stats.avgRating}
                     filtered={state.stats.filtered}
                 />
@@ -42,12 +48,12 @@ export function GuidesPage() {
                 <SearchToolbar
                     searchTerm={state.search.searchTerm}
                     onSearchChange={state.search.setSearchTerm}
-                    searchPlaceholder="Buscar guía..."
-                    statusFilter={state.filters.status}
+                    searchPlaceholder="Buscar guía por nombre, correo, documento..."
+                    statusFilter={state.filters.estado_usuario}
                     onStatusFilterChange={(value) =>
-                        state.setFilters({ ...state.filters, status: value })
+                        state.setFilters({ ...state.filters, estado_usuario: value })
                     }
-                    statusOptions={GUIDE_STATUS_OPTIONS}
+                    statusOptions={STATUS_OPTIONS}
                     hasActiveFilters={state.hasActiveFilters}
                     onToggleFilters={state.dialogs.toggleFilters}
                     onExport={state.handleExportCSV}
@@ -68,7 +74,8 @@ export function GuidesPage() {
                             onDetail={state.dialogs.openDetail}
                             onEdit={state.openEdit}
                             onDelete={state.dialogs.openDelete}
-                            onToggleStatus={state.handleToggleStatus}
+                            onToggleActivo={state.handleToggleActivo}
+                            onToggleDisponibilidad={state.handleToggleDisponibilidad}
                             sortField={state.sortable.sortField}
                             onSort={state.sortable.handleSort}
                             getSortIcon={state.sortable.getSortIcon}

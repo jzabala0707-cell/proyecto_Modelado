@@ -9,6 +9,7 @@ export function useCrudState(initialItems, options = {}) {
         const newItem = {
             id: nextId,
             createdAt: now,
+            creado_en: now,
             ...newItemData,
         };
         setItems([...items, newItem]);
@@ -34,10 +35,33 @@ export function useCrudState(initialItems, options = {}) {
             if (item.id !== id)
                 return item;
             const current = item[statusKey];
-            const newStatus = current === "active" ? "inactive" : "active";
-            const updated = { ...item, [statusKey]: newStatus };
-            toast.success(options.onToggleMessage?.(updated, newStatus) ??
-                `${label} ${newStatus === "active" ? "activado" : "desactivado"} exitosamente`);
+            let newValue;
+            let actionLabel;
+            if (typeof current === "boolean") {
+                newValue = !current;
+                actionLabel = newValue ? "activado" : "desactivado";
+            } else if (typeof current === "string") {
+                const upper = current.toUpperCase();
+                if (upper === "ACTIVO") {
+                    newValue = "INACTIVO";
+                    actionLabel = "desactivado";
+                } else if (upper === "INACTIVO" || upper === "BLOQUEADO") {
+                    newValue = "ACTIVO";
+                    actionLabel = "activado";
+                } else if (current === "active") {
+                    newValue = "inactive";
+                    actionLabel = "desactivado";
+                } else {
+                    newValue = "active";
+                    actionLabel = "activado";
+                }
+            } else {
+                newValue = "active";
+                actionLabel = "activado";
+            }
+            const updated = { ...item, [statusKey]: newValue };
+            toast.success(options.onToggleMessage?.(updated, newValue) ??
+                `${label} ${actionLabel} exitosamente`);
             return updated;
         }));
     };

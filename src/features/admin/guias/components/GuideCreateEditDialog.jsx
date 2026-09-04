@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     Dialog,
@@ -19,20 +19,30 @@ import {
 } from "@/shared/components/ui/select";
 import { Button } from "@/shared/components/ui/button";
 import { Textarea } from "@/shared/components/ui/textarea";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage, } from "@/shared/components/ui/form";
-import { Badge } from "@/shared/components/ui/badge";
+import { Switch } from "@/shared/components/ui/switch";
+import {
+    Accordion,
+    AccordionItem,
+    AccordionTrigger,
+    AccordionContent,
+} from "@/shared/components/ui/accordion";
+import {
+    Form,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormControl,
+    FormMessage,
+} from "@/shared/components/ui/form";
 import { guideSchema } from "../validations/guideValidation";
-import { GUIDE_LANGUAGE_OPTIONS, GUIDE_SPECIALTY_OPTIONS } from "../guideServices";
-import { X } from "lucide-react";
-
-function parseCsvToArray(value) {
-    if (Array.isArray(value)) return value;
-    if (!value) return [];
-    return String(value)
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean);
-}
+import { IDIOMA_OPTIONS, CERTIFICACION_OPTIONS } from "../guideServices";
+import {
+    TIPO_DOCUMENTO_OPTIONS,
+    GENERO_OPTIONS,
+    NIVEL_IDIOMA_OPTIONS,
+    ESTADO_USUARIO_OPTIONS,
+} from "@/shared/constants/dbEnums";
+import { X, Plus } from "lucide-react";
 
 export function GuideCreateEditDialog({
     open,
@@ -48,6 +58,24 @@ export function GuideCreateEditDialog({
         mode: "onSubmit",
     });
 
+    const {
+        fields: idiomaFields,
+        append: appendIdioma,
+        remove: removeIdioma,
+    } = useFieldArray({
+        control: form.control,
+        name: "idiomas",
+    });
+
+    const {
+        fields: certFields,
+        append: appendCert,
+        remove: removeCert,
+    } = useFieldArray({
+        control: form.control,
+        name: "certificaciones_puente",
+    });
+
     useEffect(() => {
         if (open) {
             form.reset(formData);
@@ -55,83 +83,27 @@ export function GuideCreateEditDialog({
     }, [open, formData, form]);
 
     const handleSubmit = form.handleSubmit((datos) => {
-        const languageIds = Array.isArray(datos.languages)
-            ? datos.languages.filter((v) => !Number.isNaN(Number(v))).map(Number)
-            : [];
-        const specialtyIds = Array.isArray(datos.specialties)
-            ? datos.specialties.filter((v) => !Number.isNaN(Number(v))).map(Number)
-            : [];
+        const idiomasLimpios = (datos.idiomas ?? []).filter(
+            (i) => i && Number(i.id_idioma) > 0 && i.nivel
+        );
+        const certificacionesLimpias = (datos.certificaciones_puente ?? []).filter(
+            (c) => c && Number(c.id_certificacion) > 0
+        );
         const payload = {
             ...datos,
-            languageIds,
-            specialtyIds,
+            idiomas: idiomasLimpios,
+            certificaciones_puente: certificacionesLimpias,
         };
         onSubmit(payload);
     });
 
-    const toggleChip = (field, options, optionId) => {
-        const currentIds = Array.isArray(field.value) ? field.value.map(String) : [];
-        const idStr = String(optionId);
-        const nextIds = currentIds.includes(idStr)
-            ? currentIds.filter((id) => id !== idStr)
-            : [...currentIds, idStr];
-        const nextValues = nextIds.map((id) => {
-            const opt = options.find((o) => String(o.value) === id);
-            return opt ? String(opt.value) : id;
-        });
-        field.onChange(nextValues);
-    };
-
-    const removeChip = (field, id) => {
-        const currentIds = Array.isArray(field.value) ? field.value.map(String) : [];
-        const nextIds = currentIds.filter((v) => String(v) !== String(id));
-        field.onChange(nextIds);
-    };
-
-    const renderChipBag = (field, options, placeholder) => {
-        const currentIds = Array.isArray(field.value) ? field.value.map(String) : [];
-        const labelsSelected = options.filter((o) => currentIds.includes(String(o.value)));
-        const unselected = options.filter((o) => !currentIds.includes(String(o.value)));
-        return (
-            <div className="space-y-2">
-                <div className="flex flex-wrap gap-1.5 min-h-[36px] border rounded-md px-3 py-2 bg-background focus-within:ring-1 focus-within:ring-ring">
-                    {labelsSelected.length === 0
-                        ? (<span className="text-muted-foreground text-sm self-center">{placeholder}</span>)
-                        : labelsSelected.map((opt) => (
-                            <Badge key={opt.value} variant="secondary" className="flex items-center gap-1 pr-1">
-                                {opt.label}
-                                <button
-                                    type="button"
-                                    onClick={() => removeChip(field, opt.value)}
-                                    className="rounded-sm opacity-60 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring px-1"
-                                    aria-label={`Quitar ${opt.label}`}
-                                >
-                                    <X className="h-3 w-3" />
-                                </button>
-                            </Badge>
-                        ))}
-                </div>
-                {unselected.length > 0 && (
-                    <div className="flex flex-wrap gap-1 pt-1">
-                        {unselected.map((opt) => (
-                            <button
-                                type="button"
-                                key={opt.value}
-                                onClick={() => toggleChip(field, options, opt.value)}
-                                className="text-xs rounded-md border border-dashed px-2.5 py-1 text-muted-foreground hover:text-foreground hover:border-solid transition"
-                            >
-                                + {opt.label}
-                            </button>
-                        ))}
-                    </div>
-                )}
-            </div>
-        );
+    const onSyncChange = (name, value) => {
+        setFormData?.((prev) => ({ ...prev, [name]: value }));
     };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[700px]">
+            <DialogContent className="sm:max-w-[780px] max-h-[92vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle>{isEdit ? "Editar Guía" : "Crear Nuevo Guía"}</DialogTitle>
                     <DialogDescription>
@@ -141,167 +113,731 @@ export function GuideCreateEditDialog({
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                    <form onSubmit={handleSubmit} className="space-y-0">
-                        <div className="grid grid-cols-2 gap-4 py-4 max-h-[70vh] overflow-y-auto">
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Nombre Completo</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                placeholder="Juan Pérez"
-                                                onChange={(e) => {
-                                                    field.onChange(e);
-                                                    setFormData({ ...formData, name: e.target.value });
-                                                }}
+                    <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
+                        <div className="flex-1 overflow-y-auto pr-1">
+                            <Accordion
+                                type="multiple"
+                                defaultValue={[
+                                    "sec-usuario",
+                                    "sec-identificacion",
+                                    "sec-profesional",
+                                    "sec-idiomas",
+                                    "sec-certificaciones",
+                                ]}
+                                className="w-full"
+                            >
+                                <AccordionItem value="sec-usuario">
+                                    <AccordionTrigger className="font-semibold text-base">
+                                        1. Datos de Usuario
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="grid grid-cols-2 gap-4 pt-2">
+                                            <FormField
+                                                control={form.control}
+                                                name="firstName"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Nombre *</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                {...field}
+                                                                placeholder="Juan"
+                                                                onChange={(e) => {
+                                                                    field.onChange(e);
+                                                                    onSyncChange("firstName", e.target.value);
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
                                             />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="email"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Email</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type="email"
-                                                {...field}
-                                                placeholder="juan@artetours.com"
-                                                onChange={(e) => {
-                                                    field.onChange(e);
-                                                    setFormData({ ...formData, email: e.target.value });
-                                                }}
+                                            <FormField
+                                                control={form.control}
+                                                name="lastName"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Apellido *</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                {...field}
+                                                                placeholder="Pérez"
+                                                                onChange={(e) => {
+                                                                    field.onChange(e);
+                                                                    onSyncChange("lastName", e.target.value);
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
                                             />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="phone"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Teléfono</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                placeholder="+57 300 123 4567"
-                                                onChange={(e) => {
-                                                    field.onChange(e);
-                                                    setFormData({ ...formData, phone: e.target.value });
-                                                }}
+                                            <FormField
+                                                control={form.control}
+                                                name="correo"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Correo Electrónico *</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                type="email"
+                                                                {...field}
+                                                                placeholder="juan@artetours.com"
+                                                                onChange={(e) => {
+                                                                    field.onChange(e);
+                                                                    onSyncChange("correo", e.target.value);
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
                                             />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="status"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Estado</FormLabel>
-                                        <Select
-                                            onValueChange={(value) => {
-                                                field.onChange(value);
-                                                setFormData({ ...formData, status: value });
-                                            }}
-                                            value={field.value}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="active">Disponible</SelectItem>
-                                                <SelectItem value="busy">Ocupado</SelectItem>
-                                                <SelectItem value="inactive">Inactivo</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="languages"
-                                render={({ field }) => (
-                                    <FormItem className="col-span-2 md:col-span-1">
-                                        <FormLabel>Idiomas (tabla puente guide_languages)</FormLabel>
-                                        <FormControl>
-                                            {renderChipBag(field, GUIDE_LANGUAGE_OPTIONS, "Selecciona idiomas...")}
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="specialties"
-                                render={({ field }) => (
-                                    <FormItem className="col-span-2 md:col-span-1">
-                                        <FormLabel>Especialidades (tabla puente guide_specialties)</FormLabel>
-                                        <FormControl>
-                                            {renderChipBag(field, GUIDE_SPECIALTY_OPTIONS, "Selecciona especialidades...")}
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="address"
-                                render={({ field }) => (
-                                    <FormItem className="col-span-2">
-                                        <FormLabel>Dirección</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                {...field}
-                                                placeholder="Medellín, Colombia"
-                                                onChange={(e) => {
-                                                    field.onChange(e);
-                                                    setFormData({ ...formData, address: e.target.value });
-                                                }}
+                                            <FormField
+                                                control={form.control}
+                                                name="telefono"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Teléfono</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                {...field}
+                                                                placeholder="+57 300 123 4567"
+                                                                onChange={(e) => {
+                                                                    field.onChange(e);
+                                                                    onSyncChange("telefono", e.target.value);
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
                                             />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="bio"
-                                render={({ field }) => (
-                                    <FormItem className="col-span-2">
-                                        <FormLabel>Biografía</FormLabel>
-                                        <FormControl>
-                                            <Textarea
-                                                {...field}
-                                                placeholder="Breve descripción del guía, experiencia, etc."
-                                                rows={3}
-                                                onChange={(e) => {
-                                                    field.onChange(e);
-                                                    setFormData({ ...formData, bio: e.target.value });
-                                                }}
+                                            <FormField
+                                                control={form.control}
+                                                name="estado"
+                                                render={({ field }) => (
+                                                    <FormItem className="col-span-2">
+                                                        <FormLabel>Estado de Usuario *</FormLabel>
+                                                        <Select
+                                                            onValueChange={(value) => {
+                                                                field.onChange(value);
+                                                                onSyncChange("estado", value);
+                                                            }}
+                                                            value={field.value}
+                                                        >
+                                                            <FormControl>
+                                                                <SelectTrigger>
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                {ESTADO_USUARIO_OPTIONS.map((opt) => (
+                                                                    <SelectItem key={opt.value} value={opt.value}>
+                                                                        {opt.label}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
                                             />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+
+                                <AccordionItem value="sec-identificacion">
+                                    <AccordionTrigger className="font-semibold text-base">
+                                        2. Identificación del Guía
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="grid grid-cols-2 gap-4 pt-2">
+                                            <FormField
+                                                control={form.control}
+                                                name="tipo_documento"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Tipo de Documento *</FormLabel>
+                                                        <Select
+                                                            onValueChange={(value) => {
+                                                                field.onChange(value);
+                                                                onSyncChange("tipo_documento", value);
+                                                            }}
+                                                            value={field.value}
+                                                        >
+                                                            <FormControl>
+                                                                <SelectTrigger>
+                                                                    <SelectValue />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                {TIPO_DOCUMENTO_OPTIONS.map((opt) => (
+                                                                    <SelectItem key={opt.value} value={opt.value}>
+                                                                        {opt.label}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="numero_documento"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Número de Documento *</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                {...field}
+                                                                placeholder="123456789"
+                                                                onChange={(e) => {
+                                                                    field.onChange(e);
+                                                                    onSyncChange("numero_documento", e.target.value);
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="fecha_nacimiento"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Fecha de Nacimiento</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                type="date"
+                                                                {...field}
+                                                                onChange={(e) => {
+                                                                    field.onChange(e);
+                                                                    onSyncChange("fecha_nacimiento", e.target.value);
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="genero"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Género</FormLabel>
+                                                        <Select
+                                                            onValueChange={(value) => {
+                                                                field.onChange(value);
+                                                                onSyncChange("genero", value);
+                                                            }}
+                                                            value={field.value || undefined}
+                                                        >
+                                                            <FormControl>
+                                                                <SelectTrigger>
+                                                                    <SelectValue placeholder="Seleccionar..." />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                {GENERO_OPTIONS.map((opt) => (
+                                                                    <SelectItem key={opt.value} value={opt.value}>
+                                                                        {opt.label}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="nacionalidad"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Nacionalidad</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                {...field}
+                                                                placeholder="Colombiano/a"
+                                                                maxLength={100}
+                                                                onChange={(e) => {
+                                                                    field.onChange(e);
+                                                                    onSyncChange("nacionalidad", e.target.value);
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="pais_residencia"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>País de Residencia</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                {...field}
+                                                                placeholder="Colombia"
+                                                                maxLength={100}
+                                                                onChange={(e) => {
+                                                                    field.onChange(e);
+                                                                    onSyncChange("pais_residencia", e.target.value);
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="ciudad_residencia"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Ciudad de Residencia</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                {...field}
+                                                                placeholder="Medellín"
+                                                                maxLength={100}
+                                                                onChange={(e) => {
+                                                                    field.onChange(e);
+                                                                    onSyncChange("ciudad_residencia", e.target.value);
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="direccion"
+                                                render={({ field }) => (
+                                                    <FormItem className="col-span-2">
+                                                        <FormLabel>Dirección</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                {...field}
+                                                                placeholder="Carrera 70 #1-100, El Poblado"
+                                                                maxLength={255}
+                                                                onChange={(e) => {
+                                                                    field.onChange(e);
+                                                                    onSyncChange("direccion", e.target.value);
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+
+                                <AccordionItem value="sec-profesional">
+                                    <AccordionTrigger className="font-semibold text-base">
+                                        3. Datos Profesionales
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="grid grid-cols-2 gap-4 pt-2">
+                                            <FormField
+                                                control={form.control}
+                                                name="especialidad"
+                                                render={({ field }) => (
+                                                    <FormItem className="col-span-2">
+                                                        <FormLabel>Especialidad Principal</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                {...field}
+                                                                placeholder="Ej: Historia urbana y cultural de Medellín"
+                                                                maxLength={150}
+                                                                onChange={(e) => {
+                                                                    field.onChange(e);
+                                                                    onSyncChange("especialidad", e.target.value);
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="experiencia_anios"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Años de Experiencia</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                type="number"
+                                                                min={0}
+                                                                {...field}
+                                                                value={field.value ?? ""}
+                                                                placeholder="0"
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value;
+                                                                    field.onChange(val);
+                                                                    onSyncChange("experiencia_anios", val);
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="foto_url"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>URL Foto (perfil)</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                {...field}
+                                                                placeholder="https://..."
+                                                                maxLength={500}
+                                                                onChange={(e) => {
+                                                                    field.onChange(e);
+                                                                    onSyncChange("foto_url", e.target.value);
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="certificaciones"
+                                                render={({ field }) => (
+                                                    <FormItem className="col-span-2">
+                                                        <FormLabel>Certificaciones (texto libre)</FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                {...field}
+                                                                placeholder="Ej: Guía Oficial, First Aid"
+                                                                onChange={(e) => {
+                                                                    field.onChange(e);
+                                                                    onSyncChange("certificaciones", e.target.value);
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="biografia"
+                                                render={({ field }) => (
+                                                    <FormItem className="col-span-2">
+                                                        <FormLabel>Biografía</FormLabel>
+                                                        <FormControl>
+                                                            <Textarea
+                                                                {...field}
+                                                                placeholder="Breve descripción profesional, experiencia y áreas de interés..."
+                                                                rows={4}
+                                                                onChange={(e) => {
+                                                                    field.onChange(e);
+                                                                    onSyncChange("biografia", e.target.value);
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="disponibilidad"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                                        <div className="space-y-0.5">
+                                                            <FormLabel className="text-base">Disponibilidad</FormLabel>
+                                                            <p className="text-sm text-muted-foreground">
+                                                                Indica si el guía está disponible para tours.
+                                                            </p>
+                                                        </div>
+                                                        <FormControl>
+                                                            <Switch
+                                                                checked={!!field.value}
+                                                                onCheckedChange={(val) => {
+                                                                    field.onChange(val);
+                                                                    onSyncChange("disponibilidad", val);
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="activo"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                                        <div className="space-y-0.5">
+                                                            <FormLabel className="text-base">Activo</FormLabel>
+                                                            <p className="text-sm text-muted-foreground">
+                                                                Guía habilitado en el sistema.
+                                                            </p>
+                                                        </div>
+                                                        <FormControl>
+                                                            <Switch
+                                                                checked={!!field.value}
+                                                                onCheckedChange={(val) => {
+                                                                    field.onChange(val);
+                                                                    onSyncChange("activo", val);
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+
+                                <AccordionItem value="sec-idiomas">
+                                    <AccordionTrigger className="font-semibold text-base">
+                                        4. Idiomas (N:M con nivel)
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="space-y-3 pt-2">
+                                            {idiomaFields.map((fieldItem, index) => (
+                                                <div
+                                                    key={fieldItem.id}
+                                                    className="grid grid-cols-[1fr_1fr_auto] gap-3 items-end p-3 border rounded-lg bg-muted/20"
+                                                >
+                                                    <FormField
+                                                        control={form.control}
+                                                        name={`idiomas.${index}.id_idioma`}
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Idioma *</FormLabel>
+                                                                <Select
+                                                                    onValueChange={(value) => {
+                                                                        field.onChange(Number(value));
+                                                                    }}
+                                                                    value={
+                                                                        field.value
+                                                                            ? String(field.value)
+                                                                            : undefined
+                                                                    }
+                                                                >
+                                                                    <FormControl>
+                                                                        <SelectTrigger>
+                                                                            <SelectValue placeholder="Seleccionar idioma" />
+                                                                        </SelectTrigger>
+                                                                    </FormControl>
+                                                                    <SelectContent>
+                                                                        {IDIOMA_OPTIONS.map((opt) => (
+                                                                            <SelectItem
+                                                                                key={opt.value}
+                                                                                value={String(opt.value)}
+                                                                            >
+                                                                                {opt.label}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={form.control}
+                                                        name={`idiomas.${index}.nivel`}
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel>Nivel *</FormLabel>
+                                                                <Select
+                                                                    onValueChange={field.onChange}
+                                                                    value={field.value || undefined}
+                                                                >
+                                                                    <FormControl>
+                                                                        <SelectTrigger>
+                                                                            <SelectValue placeholder="Seleccionar nivel" />
+                                                                        </SelectTrigger>
+                                                                    </FormControl>
+                                                                    <SelectContent>
+                                                                        {NIVEL_IDIOMA_OPTIONS.map((opt) => (
+                                                                            <SelectItem key={opt.value} value={opt.value}>
+                                                                                {opt.label}
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                                <FormMessage />
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => removeIdioma(index)}
+                                                        className="h-10 w-10 text-destructive hover:text-destructive"
+                                                        aria-label="Quitar idioma"
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    appendIdioma({ id_idioma: "", nivel: "" })
+                                                }
+                                                className="w-full"
+                                            >
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Agregar Idioma
+                                            </Button>
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+
+                                <AccordionItem value="sec-certificaciones">
+                                    <AccordionTrigger className="font-semibold text-base">
+                                        5. Certificaciones (N:M detalle)
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="space-y-3 pt-2">
+                                            {certFields.map((fieldItem, index) => (
+                                                <div
+                                                    key={fieldItem.id}
+                                                    className="space-y-3 p-3 border rounded-lg bg-muted/20"
+                                                >
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`certificaciones_puente.${index}.id_certificacion`}
+                                                            render={({ field }) => (
+                                                                <FormItem className="col-span-2">
+                                                                    <FormLabel>Certificación *</FormLabel>
+                                                                    <Select
+                                                                        onValueChange={(value) => {
+                                                                            field.onChange(Number(value));
+                                                                        }}
+                                                                        value={
+                                                                            field.value
+                                                                                ? String(field.value)
+                                                                                : undefined
+                                                                        }
+                                                                    >
+                                                                        <FormControl>
+                                                                            <SelectTrigger>
+                                                                                <SelectValue placeholder="Seleccionar certificación" />
+                                                                            </SelectTrigger>
+                                                                        </FormControl>
+                                                                        <SelectContent>
+                                                                            {CERTIFICACION_OPTIONS.map((opt) => (
+                                                                                <SelectItem
+                                                                                    key={opt.value}
+                                                                                    value={String(opt.value)}
+                                                                                >
+                                                                                    {opt.label}
+                                                                                </SelectItem>
+                                                                            ))}
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`certificaciones_puente.${index}.fecha_obtencion`}
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Fecha Obtención</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input type="date" {...field} />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`certificaciones_puente.${index}.fecha_vencimiento`}
+                                                            render={({ field }) => (
+                                                                <FormItem>
+                                                                    <FormLabel>Fecha Vencimiento</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input type="date" {...field} />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <FormField
+                                                            control={form.control}
+                                                            name={`certificaciones_puente.${index}.numero_certificado`}
+                                                            render={({ field }) => (
+                                                                <FormItem className="col-span-2">
+                                                                    <FormLabel>Número de Certificado</FormLabel>
+                                                                    <FormControl>
+                                                                        <Input
+                                                                            {...field}
+                                                                            placeholder="GT-001-2025"
+                                                                            maxLength={50}
+                                                                        />
+                                                                    </FormControl>
+                                                                    <FormMessage />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </div>
+                                                    <div className="flex justify-end">
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => removeCert(index)}
+                                                            className="text-destructive hover:text-destructive"
+                                                        >
+                                                            <X className="h-4 w-4 mr-1" />
+                                                            Quitar certificación
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    appendCert({
+                                                        id_certificacion: "",
+                                                        fecha_obtencion: "",
+                                                        fecha_vencimiento: "",
+                                                        numero_certificado: "",
+                                                    })
+                                                }
+                                                className="w-full"
+                                            >
+                                                <Plus className="h-4 w-4 mr-2" />
+                                                Agregar Certificación
+                                            </Button>
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Accordion>
                         </div>
-                        <DialogFooter>
-                            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                        <DialogFooter className="pt-4 border-t mt-4">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => onOpenChange(false)}
+                            >
                                 Cancelar
                             </Button>
                             <Button type="submit">

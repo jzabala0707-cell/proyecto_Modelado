@@ -1,131 +1,253 @@
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
-import { mockBookings, mockClients, emptyBookingForm, bookingServices } from "../bookingServices";
+import {
+  mockReservas,
+  mockClientes,
+  emptyBookingForm,
+  bookingServices,
+} from "../bookingServices";
 import { useSearchFilter } from "@/features/admin/hooks/useSearchFilter";
 import { useCrudState } from "@/features/admin/hooks/useCrudState";
 import { useDialogs } from "@/features/admin/hooks/useDialogs";
 import { usePagination } from "@/features/admin/hooks/usePagination";
 import { useSortableTable } from "@/features/admin/hooks/useSortableTable";
+
+function flattenReserva(r) {
+  const id = r.id_reserva ?? r.id;
+  const customer = r.turista_nombre ?? r.customer ?? "Turista";
+  return {
+    id,
+    id_reserva: r.id_reserva ?? id,
+    id_turista: r.id_turista,
+    id_salida: r.id_salida,
+    codigo_reserva: r.codigo_reserva ?? "",
+    fecha_reserva: r.fecha_reserva ?? "",
+    fecha_cancelacion: r.fecha_cancelacion ?? null,
+
+    cantidad_adultos: r.cantidad_adultos ?? 1,
+    cantidad_ninos: r.cantidad_ninos ?? 0,
+    precio_unitario: r.precio_unitario ?? 0,
+    descuento: r.descuento ?? 0,
+    subtotal: r.subtotal ?? 0,
+    total: r.total ?? 0,
+    estado: r.estado ?? r.status ?? "PENDIENTE",
+    status: r.estado ?? r.status ?? "PENDIENTE",
+    motivo_cancelacion: r.motivo_cancelacion ?? null,
+    observaciones: r.observaciones ?? "",
+
+    customer,
+    turista_nombre: customer,
+    turista_correo: r.turista_correo ?? r.email ?? "",
+    email: r.turista_correo ?? r.email ?? "",
+    turista_telefono: r.turista_telefono ?? r.phone ?? "",
+    phone: r.turista_telefono ?? r.phone ?? "",
+
+    tour: r.salida_tour_nombre ?? r.tour ?? "",
+    salida_tour_nombre: r.salida_tour_nombre ?? r.tour ?? "",
+    date: r.salida_fecha ?? r.date ?? "",
+    salida_fecha: r.salida_fecha ?? r.date ?? "",
+    time: r.salida_hora ?? r.time ?? "",
+    salida_hora: r.salida_hora ?? r.time ?? "",
+    salida_cupos_disponibles: r.salida_cupos_disponibles,
+
+    people: (r.cantidad_adultos ?? 0) + (r.cantidad_ninos ?? 0),
+    guia_nombre: r.guia_nombre ?? r.guide ?? "",
+    guide: r.guia_nombre ?? r.guide ?? "",
+    participantes: r.participantes ?? [],
+  };
+}
+
+function mergeFlatToBookingForm(flat) {
+  return {
+    id_turista: flat.id_turista ?? null,
+    id_salida: flat.id_salida ?? null,
+    cantidad_adultos: flat.cantidad_adultos ?? 1,
+    cantidad_ninos: flat.cantidad_ninos ?? 0,
+    precio_unitario: flat.precio_unitario ?? 0,
+    descuento: flat.descuento ?? 0,
+    subtotal: flat.subtotal ?? 0,
+    total: flat.total ?? 0,
+    estado: flat.estado ?? flat.status ?? "PENDIENTE",
+    motivo_cancelacion: flat.motivo_cancelacion ?? "",
+    observaciones: flat.observaciones ?? "",
+    codigo_reserva: flat.codigo_reserva ?? "",
+    fecha_reserva: flat.fecha_reserva ?? "",
+    fecha_cancelacion: flat.fecha_cancelacion ?? null,
+    participantes: flat.participantes ?? [],
+  };
+}
+
 export function useBookingsPage() {
-    const crud = useCrudState(mockBookings, { name: "Reserva" });
-    const dialogs = useDialogs();
-    const [formData, setFormData] = useState(emptyBookingForm);
-    const [filters, setFilters] = useState({
-        status: "all",
-        paymentMethod: "all",
-        guide: "all",
-        dateFrom: "",
-        dateTo: "",
-    });
-    const search = useSearchFilter(
-        crud.items,
-        (b) => [b.customer, b.tour, b.id.toString(), b.email ?? "", b.phone ?? ""],
-        (b, f) => {
-            const matchesStatus = f.status === "all" || b.status === f.status;
-            const matchesPayment = f.paymentMethod === "all" || b.paymentMethod === f.paymentMethod;
-            const matchesGuide = f.guide === "all" || (b.guide ?? "") === f.guide;
-            const matchesDateFrom = !f.dateFrom || b.date >= f.dateFrom;
-            const matchesDateTo = !f.dateTo || b.date <= f.dateTo;
-            return matchesStatus && matchesPayment && matchesGuide && matchesDateFrom && matchesDateTo;
-        },
-        filters
+  const flatInitial = Array.isArray(mockReservas) ? mockReservas.map(flattenReserva) : [];
+  const crud = useCrudState(flatInitial, { name: "Reserva" });
+  const dialogs = useDialogs();
+  const [formData, setFormData] = useState(emptyBookingForm);
+  const [filters, setFilters] = useState({
+    status: "all",
+    dateFrom: "",
+    dateTo: "",
+    tour: "all",
+  });
+  const search = useSearchFilter(
+    crud.items,
+    (b) => [
+      b.codigo_reserva,
+      b.customer,
+      b.tour,
+      (b.id_reserva ?? b.id).toString(),
+      b.email ?? "",
+      b.phone ?? "",
+    ],
+    (b, f) => {
+      const matchesStatus = f.status === "all" || (b.estado ?? b.status) === f.status;
+      const matchesTour = f.tour === "all" || (b.tour ?? b.salida_tour_nombre) === f.tour;
+      const fechaSalida = b.salida_fecha ?? b.date ?? "";
+      const matchesDateFrom = !f.dateFrom || fechaSalida >= f.dateFrom;
+      const matchesDateTo = !f.dateTo || fechaSalida <= f.dateTo;
+      return matchesStatus && matchesTour && matchesDateFrom && matchesDateTo;
+    },
+    filters
+  );
+  const sortable = useSortableTable(search.filteredData);
+  const pagination = usePagination(sortable.sortedItems, 10);
+  const hasActiveFilters =
+    filters.status !== "all" ||
+    filters.tour !== "all" ||
+    filters.dateFrom !== "" ||
+    filters.dateTo !== "" ||
+    search.searchTerm !== "";
+
+  const handleCreate = useCallback(() => {
+    let reservaPayload;
+    let participantes = [];
+    if (formData && formData.reserva) {
+      reservaPayload = formData.reserva;
+      participantes = formData.participantes ?? [];
+    } else {
+      reservaPayload = formData;
+    }
+    const pax =
+      Number(reservaPayload.cantidad_adultos ?? 0) +
+      Number(reservaPayload.cantidad_ninos ?? 0);
+    const pu = Number(reservaPayload.precio_unitario ?? 0);
+    const desc = Number(reservaPayload.descuento ?? 0);
+    const subtotal = Math.max(0, pax * pu - desc);
+    const created = crud.handleCreate(
+      flattenReserva({
+        ...reservaPayload,
+        subtotal,
+        total: subtotal,
+      })
     );
-    const sortable = useSortableTable(search.filteredData);
-    const pagination = usePagination(sortable.sortedItems, 10);
-    const hasActiveFilters =
-        filters.status !== "all" ||
-        filters.paymentMethod !== "all" ||
-        filters.guide !== "all" ||
-        filters.dateFrom !== "" ||
-        filters.dateTo !== "" ||
-        search.searchTerm !== "";
-    const handleCreate = useCallback(() => {
-        const created = crud.handleCreate(formData);
-        dialogs.closeCreate();
-        setFormData(emptyBookingForm);
-        return created;
-    }, [crud, formData, dialogs]);
-    const handleEdit = useCallback(() => {
-        if (!dialogs.selectedItem) return;
-        crud.handleEdit(dialogs.selectedItem.id, formData);
-        dialogs.closeEdit();
-    }, [crud, dialogs, formData]);
-    const handleDelete = useCallback(() => {
-        if (!dialogs.selectedItem) return;
-        crud.handleDelete(dialogs.selectedItem.id);
-        dialogs.closeDelete();
-    }, [crud, dialogs]);
-    const handleToggleStatus = useCallback(
-        (booking) => {
-            const current = booking.status;
-            let newStatus = "confirmed";
-            if (current === "pending") {
-                newStatus = "confirmed";
-            } else if (current === "confirmed") {
-                newStatus = "cancelled";
-            } else {
-                newStatus = "pending";
-            }
-            crud.handleEdit(booking.id, { ...booking, status: newStatus });
-            toast.success(`Reserva marcada como ${newStatus}`);
-        },
-        [crud]
-    );
-    const openCreate = useCallback(() => {
-        setFormData(emptyBookingForm);
-        dialogs.openCreate();
-    }, [dialogs]);
-    const openEdit = useCallback(
-        (booking) => {
-            setFormData({
-                customer: booking.customer ?? "",
-                tour: booking.tour ?? "Comuna 13 Tour",
-                date: booking.date ?? "",
-                time: booking.time ?? "09:00",
-                people: booking.people ?? 2,
-                total: booking.total ?? 0,
-                status: booking.status ?? "pending",
-                phone: booking.phone ?? "",
-                email: booking.email ?? "",
-                notes: booking.notes ?? "",
-                paymentMethod: booking.paymentMethod ?? "Tarjeta",
-                guide: booking.guide ?? "",
-            });
-            dialogs.openEdit(booking);
-        },
-        [dialogs]
-    );
-    const clearFilters = useCallback(() => {
-        setFilters({ status: "all", paymentMethod: "all", guide: "all", dateFrom: "", dateTo: "" });
-        search.setSearchTerm("");
-        sortable.resetSort();
-        toast.info("Filtros limpiados");
-    }, [search, sortable]);
-    const handleExportCSV = useCallback(() => {
-        bookingServices.exportCSV(search.filteredData, mockClients);
-        toast.success("Datos exportados a CSV");
-    }, [search]);
-    const stats = bookingServices.computeStats(crud.items, search.filteredData.length);
-    return {
-        bookings: crud.items,
-        items: pagination.paginatedItems,
-        search,
-        sortable,
-        pagination,
-        dialogs,
-        formData,
-        setFormData,
-        filters,
-        setFilters,
-        hasActiveFilters,
-        stats,
-        handleCreate,
-        handleEdit,
-        handleDelete,
-        handleToggleStatus,
-        openCreate,
-        openEdit,
-        clearFilters,
-        handleExportCSV,
+    dialogs.closeCreate();
+    setFormData(emptyBookingForm);
+    void participantes;
+    return created;
+  }, [crud, formData, dialogs]);
+
+  const handleEdit = useCallback(() => {
+    if (!dialogs.selectedItem) return;
+    const id = dialogs.selectedItem.id_reserva ?? dialogs.selectedItem.id;
+    let reservaPayload;
+    let participantes = [];
+    if (formData && formData.reserva) {
+      reservaPayload = formData.reserva;
+      participantes = formData.participantes ?? [];
+    } else {
+      reservaPayload = formData;
+    }
+    const current = dialogs.selectedItem;
+    const pax =
+      Number(reservaPayload.cantidad_adultos ?? current.cantidad_adultos ?? 0) +
+      Number(reservaPayload.cantidad_ninos ?? current.cantidad_ninos ?? 0);
+    const pu = Number(reservaPayload.precio_unitario ?? current.precio_unitario ?? 0);
+    const desc = Number(reservaPayload.descuento ?? current.descuento ?? 0);
+    const subtotal = Math.max(0, pax * pu - desc);
+    const merged = {
+      ...current,
+      ...reservaPayload,
+      subtotal,
+      total: subtotal,
+      participantes,
+      status: reservaPayload.estado ?? reservaPayload.status ?? current.status,
     };
+    crud.handleEdit(id, flattenReserva(merged));
+    dialogs.closeEdit();
+  }, [crud, dialogs, formData]);
+
+  const handleDelete = useCallback(() => {
+    if (!dialogs.selectedItem) return;
+    const id = dialogs.selectedItem.id_reserva ?? dialogs.selectedItem.id;
+    crud.handleDelete(id);
+    dialogs.closeDelete();
+  }, [crud, dialogs]);
+
+  const handleToggleStatus = useCallback(
+    (booking) => {
+      const current = booking.estado ?? booking.status ?? "PENDIENTE";
+      let nuevoEstado;
+      if (current === "PENDIENTE") nuevoEstado = "CONFIRMADA";
+      else if (current === "CONFIRMADA") nuevoEstado = "COMPLETADA";
+      else if (current === "COMPLETADA") nuevoEstado = "CANCELADA";
+      else nuevoEstado = "PENDIENTE";
+      const id = booking.id_reserva ?? booking.id;
+      const updates = { ...booking, estado: nuevoEstado, status: nuevoEstado };
+      if (nuevoEstado === "CANCELADA" && !updates.motivo_cancelacion) {
+        updates.motivo_cancelacion = "Cancelación manual rápida";
+        updates.fecha_cancelacion = new Date().toISOString().split("T")[0];
+      }
+      crud.handleEdit(id, updates);
+      toast.success(`Reserva marcada como ${nuevoEstado}`);
+    },
+    [crud]
+  );
+
+  const openCreate = useCallback(() => {
+    setFormData(emptyBookingForm);
+    dialogs.openCreate();
+  }, [dialogs]);
+
+  const openEdit = useCallback(
+    (booking) => {
+      setFormData(mergeFlatToBookingForm(booking));
+      dialogs.openEdit(booking);
+    },
+    [dialogs]
+  );
+
+  const clearFilters = useCallback(() => {
+    setFilters({ status: "all", dateFrom: "", dateTo: "", tour: "all" });
+    search.setSearchTerm("");
+    sortable.resetSort();
+    toast.info("Filtros limpiados");
+  }, [search, sortable]);
+
+  const handleExportCSV = useCallback(() => {
+    bookingServices.exportCSV(search.filteredData);
+    toast.success("Datos exportados a CSV");
+  }, [search]);
+
+  const stats = bookingServices.computeStats(crud.items, search.filteredData.length);
+  return {
+    bookings: crud.items,
+    items: pagination.paginatedItems,
+    search,
+    sortable,
+    pagination,
+    dialogs,
+    formData,
+    setFormData,
+    filters,
+    setFilters,
+    hasActiveFilters,
+    stats,
+    handleCreate,
+    handleEdit,
+    handleDelete,
+    handleToggleStatus,
+    openCreate,
+    openEdit,
+    clearFilters,
+    handleExportCSV,
+  };
 }

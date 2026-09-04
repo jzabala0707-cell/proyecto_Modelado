@@ -9,7 +9,13 @@ import {
     TableRow,
 } from "@/shared/components/ui/table";
 
+import { StatusBadge } from "@/features/admin/components/StatusBadge";
 import { EmptyState } from "@/features/admin/components/EmptyState";
+
+const activoMap = {
+    true: { label: "Activa", variant: "default" },
+    false: { label: "Inactiva", variant: "secondary" },
+};
 
 export function TourTypesTableFull({
     items,
@@ -34,65 +40,94 @@ export function TourTypesTableFull({
         <Table>
             <TableHeader>
                 <TableRow>
-                    <SortableHeader field="name">Tipo</SortableHeader>
+                    <SortableHeader field="id_categoria">ID</SortableHeader>
+                    <SortableHeader field="nombre">Categoría</SortableHeader>
                     <SortableHeader field="color">Color</SortableHeader>
-                    <SortableHeader field="count">Tours Totales</SortableHeader>
-                    <SortableHeader field="activeTours">Tours Activos</SortableHeader>
+                    <SortableHeader field="activo">Estado</SortableHeader>
                     <TableHead>Acciones</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {items.length === 0 ? (
-                    <EmptyState message="No se encontraron tipos de tour" colSpan={5} />
+                    <EmptyState
+                        message="No se encontraron categorías de tour"
+                        colSpan={5}
+                    />
                 ) : (
-                    items.map((type) => (
-                        <TableRow key={type.id}>
+                    items.map((c) => (
+                        <TableRow key={c.id_categoria ?? c.id}>
+                            <TableCell className="font-mono text-xs">
+                                #{c.id_categoria ?? c.id}
+                            </TableCell>
                             <TableCell>
-                                <div className="font-medium">{type.name}</div>
+                                <div className="font-medium">
+                                    {c.nombre ?? c.name}
+                                </div>
                                 <div className="text-xs text-muted-foreground line-clamp-1">
-                                    {type.description}
+                                    {c.descripcion ?? c.description ?? ""}
                                 </div>
                             </TableCell>
                             <TableCell>
                                 <div className="flex items-center gap-2">
                                     <span
                                         className="inline-block h-3 w-3 rounded-full border"
-                                        style={{ backgroundColor: type.color }}
+                                        style={{
+                                            backgroundColor:
+                                                c.color ?? "transparent",
+                                        }}
                                     />
                                     <span className="text-xs font-mono text-muted-foreground">
-                                        {type.color}
+                                        {c.color ?? "—"}
                                     </span>
                                 </div>
                             </TableCell>
-                            <TableCell>{type.count}</TableCell>
-                            <TableCell>{type.activeTours}</TableCell>
+                            <TableCell>
+                                <StatusBadge
+                                    status={
+                                        c.activo !== undefined
+                                            ? String(c.activo)
+                                            : c.active !== undefined
+                                              ? String(c.active)
+                                              : "true"
+                                    }
+                                    map={activoMap}
+                                />
+                            </TableCell>
                             <TableCell>
                                 <div className="flex gap-2">
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => onDetail(type)}
-                                        style={{ color: "#ff9500" }}
-                                    >
-                                        <Eye className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => onEdit(type)}
-                                        style={{ color: "#0d47a1" }}
-                                    >
-                                        <Pencil className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => onDelete(type)}
-                                        style={{ color: "#c62828" }}
-                                        title="Eliminar"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                    {onDetail && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => onDetail(c)}
+                                            style={{ color: "#ff9500" }}
+                                            title="Ver detalle"
+                                        >
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
+                                    )}
+                                    {onEdit && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => onEdit(c)}
+                                            style={{ color: "#0d47a1" }}
+                                            title="Editar"
+                                        >
+                                            <Pencil className="h-4 w-4" />
+                                        </Button>
+                                    )}
+                                    {onDelete && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => onDelete(c)}
+                                            style={{ color: "#c62828" }}
+                                            title="Eliminar"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    )}
                                 </div>
                             </TableCell>
                         </TableRow>

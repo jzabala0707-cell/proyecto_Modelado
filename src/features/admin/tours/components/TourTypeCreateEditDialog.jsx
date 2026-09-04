@@ -11,18 +11,19 @@ import {
 } from "@/shared/components/ui/dialog";
 import { Input } from "@/shared/components/ui/input";
 import { Textarea } from "@/shared/components/ui/textarea";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/shared/components/ui/select";
+import { Switch } from "@/shared/components/ui/switch";
 import { Button } from "@/shared/components/ui/button";
-import { Badge } from "@/shared/components/ui/badge";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/shared/components/ui/form";
-import { colorOptions } from "../tourServices";
+import {
+    Form,
+    FormControl,
+    FormDescription,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/shared/components/ui/form";
 import { tourTypeSchema } from "../validations/tourValidation";
+
 export function TourTypeCreateEditDialog({
     open,
     onOpenChange,
@@ -47,20 +48,19 @@ export function TourTypeCreateEditDialog({
         onSubmit(datos);
     });
 
-    const count = Number(formData.count ?? 0);
-    const active = Number(formData.activeTours ?? 0);
+    const colorValue = form.watch("color") || "";
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[560px]">
                 <DialogHeader>
                     <DialogTitle>
-                        {isEdit ? "Editar Tipo de Tour" : "Crear Nuevo Tipo de Tour"}
+                        {isEdit ? "Editar Categoría de Tour" : "Crear Nueva Categoría de Tour"}
                     </DialogTitle>
                     <DialogDescription>
                         {isEdit
-                            ? "Actualiza la información del tipo de tour"
-                            : "Ingresa los datos del nuevo tipo de tour"}
+                            ? "Actualiza la información de la categoría"
+                            : "Ingresa los datos de la nueva categoría"}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -68,7 +68,7 @@ export function TourTypeCreateEditDialog({
                         <div className="grid grid-cols-2 gap-4 py-4">
                             <FormField
                                 control={form.control}
-                                name="name"
+                                name="nombre"
                                 render={({ field }) => (
                                     <FormItem className="col-span-2">
                                         <FormLabel>Nombre</FormLabel>
@@ -78,7 +78,10 @@ export function TourTypeCreateEditDialog({
                                                 placeholder="Cultural"
                                                 onChange={(e) => {
                                                     field.onChange(e);
-                                                    setFormData({ ...formData, name: e.target.value });
+                                                    setFormData({
+                                                        ...formData,
+                                                        nombre: e.target.value,
+                                                    });
                                                 }}
                                             />
                                         </FormControl>
@@ -88,18 +91,21 @@ export function TourTypeCreateEditDialog({
                             />
                             <FormField
                                 control={form.control}
-                                name="description"
+                                name="descripcion"
                                 render={({ field }) => (
                                     <FormItem className="col-span-2">
                                         <FormLabel>Descripción</FormLabel>
                                         <FormControl>
                                             <Textarea
                                                 {...field}
-                                                placeholder="Descripción del tipo de tour..."
+                                                placeholder="Descripción de la categoría..."
                                                 rows={3}
                                                 onChange={(e) => {
                                                     field.onChange(e);
-                                                    setFormData({ ...formData, description: e.target.value });
+                                                    setFormData({
+                                                        ...formData,
+                                                        descripcion: e.target.value,
+                                                    });
                                                 }}
                                             />
                                         </FormControl>
@@ -111,68 +117,79 @@ export function TourTypeCreateEditDialog({
                                 control={form.control}
                                 name="color"
                                 render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Color</FormLabel>
-                                        <Select
-                                            onValueChange={(value) => {
-                                                field.onChange(value);
-                                                setFormData({ ...formData, color: value });
-                                            }}
-                                            value={field.value}
-                                        >
+                                    <FormItem className="col-span-2">
+                                        <FormLabel>Color (opcional)</FormLabel>
+                                        <div className="flex items-center gap-3">
                                             <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Seleccionar color" />
-                                                </SelectTrigger>
+                                                <Input
+                                                    type="color"
+                                                    className="w-14 h-10 p-1 cursor-pointer"
+                                                    value={colorValue || "#000000"}
+                                                    onChange={(e) => {
+                                                        const hex = e.target.value;
+                                                        field.onChange(hex);
+                                                        setFormData({
+                                                            ...formData,
+                                                            color: hex,
+                                                        });
+                                                    }}
+                                                />
                                             </FormControl>
-                                            <SelectContent>
-                                                {colorOptions.map((opt) => (
-                                                    <SelectItem key={opt.value} value={opt.value}>
-                                                        <div className="flex items-center gap-2">
-                                                            <span
-                                                                className="inline-block h-3 w-3 rounded-full border"
-                                                                style={{ backgroundColor: opt.value }}
-                                                            />
-                                                            {opt.label}
-                                                        </div>
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                            <FormControl>
+                                                <Input
+                                                    placeholder="#FF8A3D"
+                                                    value={colorValue}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        field.onChange(val);
+                                                        setFormData({
+                                                            ...formData,
+                                                            color: val,
+                                                        });
+                                                    }}
+                                                />
+                                            </FormControl>
+                                        </div>
+                                        <FormDescription>
+                                            Código hexadecimal del color (ej: #FF8A3D).
+                                        </FormDescription>
                                         <FormMessage className="text-destructive" />
                                     </FormItem>
                                 )}
                             />
-                            <div className="col-span-2 grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <FormLabel>Total Tours (calculado, solo lectura)</FormLabel>
-                                    <Badge variant="outline" className="h-9 px-3 w-full justify-center text-sm inline-flex">
-                                        {count} Tours
-                                    </Badge>
-                                </div>
-                                <div className="space-y-2">
-                                    <FormLabel>Tours Activos (calculado, solo lectura)</FormLabel>
-                                    <Badge variant="outline" className="h-9 px-3 w-full justify-center text-sm inline-flex">
-                                        {active} Activos
-                                    </Badge>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <FormLabel>Color seleccionado</FormLabel>
-                                <div
-                                    className="h-10 rounded-md border flex items-center justify-center text-xs text-white font-medium"
-                                    style={{ backgroundColor: formData.color }}
-                                >
-                                    {formData.color}
-                                </div>
-                            </div>
+                            <FormField
+                                control={form.control}
+                                name="activo"
+                                render={({ field }) => (
+                                    <FormItem className="col-span-2 flex flex-row items-center justify-between rounded-lg border p-4">
+                                        <div className="space-y-0.5">
+                                            <FormLabel className="text-base">Activo</FormLabel>
+                                            <FormDescription>
+                                                La categoría estará disponible para los tours.
+                                            </FormDescription>
+                                        </div>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={(checked) => {
+                                                    field.onChange(checked);
+                                                    setFormData({
+                                                        ...formData,
+                                                        activo: checked,
+                                                    });
+                                                }}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
                         </div>
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                                 Cancelar
                             </Button>
                             <Button type="submit">
-                                {isEdit ? "Guardar Cambios" : "Crear Tipo"}
+                                {isEdit ? "Guardar Cambios" : "Crear Categoría"}
                             </Button>
                         </DialogFooter>
                     </form>
